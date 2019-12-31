@@ -1,3 +1,6 @@
 *.csv
 debug/*
 *.pro.user.*
+Makefile
+Makefile.*
+*.autosave
