@@ -11,6 +11,8 @@ class Logger : public QObject
 	QString	mFileName;
 
 	QFile	mLogFile;
+	size_t	mLogId = 0;
+	qint64 mLogStart;
 public:
 	explicit Logger(QObject *parent = nullptr);
 
@@ -30,8 +32,29 @@ public:
 	void stopLog();
 	bool isStarted();
 
-	void loadLog(const QString& filename);
-	void saveLog(const QString& filename);
+	void addLogline(
+			float*	TPS,
+			float*	RPM,
+			float*	speed,
+			int gear,
+			float*	timingAdv,
+			float*	fuelTrimLow,
+			float*	fuelTrimMid,
+			float*	fuelTrimHigh,
+			float*	MAP,
+			float*	targetBoost,
+			float*	solDC,
+			int*	knockSum,
+			float*	O2FuelTrim,
+			float*	O2Front,
+			float*	O2Rear,
+			float*	injPulseFront,
+			float*	injPulseRear,
+			float*	accelEnrich
+			);
+
+//	void loadLog(const QString& filename);
+//	void saveLog(const QString& filename);
 signals:
 
 public slots:

@@ -12,7 +12,8 @@
 #include "../snxcomm/snxcomm.h"
 #include "config_data.h"
 #include "mutservice.h"
-
+#include "logger.h"
+#include "mutreader.h"
 
 namespace Ui {
 class MainWindow;
@@ -22,14 +23,16 @@ class MainWindow : public QMainWindow, public IMutDataProvider
 {
     Q_OBJECT
 
+	SnxProtocol* mSnxProtocol = nullptr;
 	MutService	mMutService;
-    SnxComm* mSnxComm = nullptr;
+	SnxComm* mSnxComm = nullptr;
     QTimer* mTimer = nullptr;
 //    QtCharts::QLineSeries *mSeries = nullptr;
 //    QtCharts::QChart* mChart = nullptr;
 
     ConfigData  mConfigData;
     Measures    mMeasures;
+	SimulationData   mSimulationData;
 
     struct ReadItem
     {
@@ -40,9 +43,13 @@ class MainWindow : public QMainWindow, public IMutDataProvider
     std::deque<ReadItem>   mReadQueue;
     time_t  mLastReadResult = 0;
 
+	Logger	mLogger;
+
+	MutReader mMutReader;
+
 public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+	explicit MainWindow(QWidget *parent = nullptr);
+	~MainWindow() override;
 
 	virtual uint8_t	getMutData(uint8_t varId) override final;
 
@@ -52,10 +59,13 @@ public slots:
     void reloadConfig();
     void connectPort();
     void closePort();
-    void onWriteByte(uint16_t addr, uint8_t value);
-    void onWriteFloat(uint16_t addr, float value);
-    void onAddrFloat(uint16_t addr);
-
+	void onWriteByte(uint16_t addr, uint8_t value);
+	void onWriteFloat(uint16_t addr, float value);
+	void onAddrFloat(uint16_t addr);
+	void onReadBytes(const std::vector<SnxProtocol::AddrInfo>& readInfo);
+	void onReadMemory(uint32_t addr, const std::vector<uint8_t>& data);
+	void onWriteAck();
+	void onError(SnxProtocol::Error error);
 
 private slots:
     void on_reloadButton_clicked();
@@ -73,6 +83,24 @@ private slots:
     void on_listTable_itemActivated(QListWidgetItem *item);
 
     void on_listTable_itemSelectionChanged();
+
+	void on_baseBoostEdit_editingFinished();
+
+	void on_buttonOpenLog_clicked();
+
+	void on_forceWGEdit_editingFinished();
+
+	void on_actionStart_Log_changed();
+
+	void on_actionConnect_changed();
+
+	void on_openButton_clicked();
+
+	void on_buttonOpenMut_clicked();
+
+	void on_buttonCloseMut_clicked();
+
+	void on_actionConnectMut_changed();
 
 private:
 
@@ -98,7 +126,7 @@ private:
                            const std::vector<QString>& columnNames,
                            uint16_t baseAddr, uint16_t rowStride);
 
-    void resizeEvent(QResizeEvent *event);
+	void resizeEvent(QResizeEvent *event) override;
 
 
     void processRead();

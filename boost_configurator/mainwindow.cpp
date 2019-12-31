@@ -23,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         ui->comboBox->addItem(portInfo.portName());
 		ui->portListMut->addItem(portInfo.portName());
-		ui->portListLogger->addItem(portInfo.portName());
 	}
 
     QLocale myLocale(QLocale::Language::English);
@@ -69,28 +68,49 @@ MainWindow::MainWindow(QWidget *parent) :
 //      y[i] = x[i]*x[i]; // let's plot a quadratic function
 //    }
     // create graph:
+	ui->plot1->legend->setVisible(true);
     ui->plot1->addGraph();
     ui->plot1->addGraph();
-    ui->plot2->addGraph();
-    ui->plot2->addGraph();
     ui->plot1->addGraph();
     ui->plot1->addGraph();
     ui->plot1->addGraph();
 //    ui->plot1->graph(0)->setData(x, y);
     ui->plot1->graph(0)->setPen(QPen(QColor(255,0,0)));
-    ui->plot1->graph(2)->setPen(QPen(QColor(0,255,0)));
-    ui->plot1->graph(3)->setPen(QPen(QColor(40,80,40)));
-    ui->plot1->graph(4)->setPen(QPen(QColor(0,255,255)));
-    // give the axes some labels:
-    ui->plot1->xAxis->setLabel("x");
+	ui->plot1->graph(0)->setName("MAP");
+	ui->plot1->graph(1)->setName("THROTTLE");
+	ui->plot1->graph(2)->setPen(QPen(QColor(0,255,0)));
+	ui->plot1->graph(2)->setName("THROTTLE'");
+	ui->plot1->graph(3)->setPen(QPen(QColor(0,0,0)));
+	ui->plot1->graph(3)->setName("TARGET_BOOST");
+	ui->plot1->graph(4)->setPen(QPen(QColor(0,255,255)));
+	ui->plot1->graph(4)->setName("TARGET_OUTPUT");
+	// give the axes some labels:
+	ui->plot1->xAxis->setLabel("time");
     // set axes ranges, so we see all data:
     ui->plot1->xAxis->setRange(0, 2);
-    ui->plot1->yAxis->setRange(-0.2, 2);
+	ui->plot1->yAxis->setRange(-0.5, 1.7);
+	// Place legend int lower left cornet
+	ui->plot1->axisRect()->insetLayout()
+			->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignLeft);
     ui->plot1->replot();
 
     ui->plot1->setInteraction(QCP::iRangeDrag, true);
 
-//    ui->myTable->setColumnCount(7);
+	ui->plot2->yAxis->setRange(0,7000);
+	ui->plot2->yAxis->setLabel("RPM");
+	ui->plot2->yAxis2->setLabel("Speed");
+	ui->plot2->yAxis2->setRange(0, 300);
+	ui->plot2->yAxis2->setVisible(true);
+
+	ui->plot2->addGraph(nullptr, ui->plot2->yAxis);
+	ui->plot2->addGraph(nullptr, ui->plot2->yAxis2);
+
+	ui->plot2->graph(0)->setPen(QPen(QColor(255,0,0)));
+//	ui->plot2->graph(0)->setName("RPM");
+//	ui->plot2->graph(1)->setName("Speed");
+
+
+	//    ui->myTable->setColumnCount(7);
 //    ui->myTable->setRowCount(6);
 //    ui->myTable->horizontalHeader()->setVisible(true);
 //    ui->myTable->verticalHeader()->setVisible(true);
@@ -154,12 +174,12 @@ MainWindow::MainWindow(QWidget *parent) :
 //	plotter->setParent(ui->tabPlotter);
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
+void MainWindow::resizeEvent(QResizeEvent */*event*/)
 {
 //    mChart->resize(ui->graphicsView->size());
 }
 
-void MainWindow::sceneRectChanged(const QRectF &rect)
+void MainWindow::sceneRectChanged(const QRectF &/*rect*/)
 {
 //    mChart->resize(ui->graphicsView->size());
 }
@@ -175,19 +195,21 @@ void MainWindow::update()
 
 //    ui->plot1->graph(0)->addData(i, 0.5 + sin(i/36.0f) * 0.5);
 //    ui->plot1->graph(1)->addData(i, 0.3 * (0.5 + sin(i/20.0f) * 0.5));
-    ui->plot2->graph(0)->addData(i, 0.1 * (0.5 + sin(i/12.0f) * 0.5));
-    ui->plot2->graph(1)->addData(i, 0.7 * (0.5 + sin(i/10.0f) * 0.5));
+//	ui->plot2->graph(0)->addData(i, 0.1 * (0.5 + sin(i/12.0) * 0.5));
+//	ui->plot2->graph(1)->addData(i, 0.7 * (0.5 + sin(i/10.0) * 0.5));
+	ui->plot2->graph(0)->addData(i, double(mMeasures.mRPM));
+	ui->plot2->graph(1)->addData(i, double(mMeasures.mSpeed));
 //    ui->plot1->graph(2)->addData(i, 0.5 + sin(i/8.0f) * 0.5);
 //    ui->plot1->graph(3)->addData(i, 0.5 + sin(i/7.0f) * 0.5);
 //    ui->plot1->graph(4)->addData(i, 0.5 + sin(i/6.0f) * 0.5);
-    ui->plot2->xAxis->setRange(i-360, i);
+	ui->plot2->xAxis->setRange(i-360, i);
     ui->plot2->replot();
 
-    ui->plot1->graph(0)->addData(i, mMeasures.mMAP);
-    ui->plot1->graph(1)->addData(i, mMeasures.mThrottle / 100);
-    ui->plot1->graph(2)->addData(i, mMeasures.mThrottleDeriv / 10000);
-    ui->plot1->graph(3)->addData(i, mMeasures.mTargetBoost);
-    ui->plot1->graph(4)->addData(i, mMeasures.mTargetOutput);
+	ui->plot1->graph(0)->addData(i, double(mMeasures.mMAP - 1.0f));
+	ui->plot1->graph(1)->addData(i, double(mMeasures.mThrottle / 100.0f));
+	ui->plot1->graph(2)->addData(i, double(mMeasures.mThrottleDeriv / 10000.0f));
+	ui->plot1->graph(3)->addData(i, double(mMeasures.mTargetBoost - 1.0f));
+	ui->plot1->graph(4)->addData(i, double(mMeasures.mTargetOutput - 1.0f));
     ui->plot1->xAxis->setRange(i-360, i);
     ui->plot1->replot();
 
@@ -198,6 +220,41 @@ void MainWindow::update()
         mLastReadResult = time(nullptr);
     }
 
+	bool mutOpen = mMutReader.isOpen();
+	MutData mutData = mMutReader.getData();
+
+	if (mutOpen)
+	{
+		ui->knockSum->setText(QString::number(mutData.mKnockCount));
+	}
+	else
+	{
+		ui->knockSum->setText("---");
+	}
+
+	// logdata
+	mLogger.addLogline(
+				&mMeasures.mThrottle,
+				&mMeasures.mRPM,
+				&mMeasures.mSpeed,
+				mMeasures.mGear,
+				&mutData.mIgnAdv,
+				mutOpen ? &mutData.mFuelTrimLow : nullptr,
+				mutOpen ? &mutData.mFuelTrimMid : nullptr,
+				mutOpen ? &mutData.mFuelTrimHigh : nullptr,
+				&mMeasures.mMAP,
+				&mMeasures.mTargetBoost,
+				&mMeasures.mSolDC,
+				mutOpen ? &mutData.mKnockCount : nullptr,
+				mutOpen ? &mutData.mO2FuelTrim : nullptr,
+				mutOpen ? &mutData.mO2Front : nullptr,
+				mutOpen ? &mutData.mO2Rear : nullptr,
+				mutOpen ? &mutData.mIngPulseFront : nullptr,
+				mutOpen ? &mutData.mIngPulseRear : nullptr,
+				mutOpen ? &mutData.mAccelEnrichment : nullptr
+				);
+
+	// next read ?
 	if (mReadQueue.empty())
     {
         // trigger a new reading
@@ -206,7 +263,7 @@ void MainWindow::update()
         mReadQueue.push_back({MAP, true});
         mReadQueue.push_back({THROTTLE, true});
         mReadQueue.push_back({SOL_DC, true});
-//        mReadQueue.push_back({GEAR, false});
+		mReadQueue.push_back({GEAR, false});
         mReadQueue.push_back({LOAD, true});
         mReadQueue.push_back({CPU_LOAD, true});
         mReadQueue.push_back({TARGET_BOOST, true});
@@ -219,8 +276,10 @@ void MainWindow::update()
 void MainWindow::reloadConfig()
 {
     // read all configuration data from controler
-    mReadQueue.push_back({TYPE_CIRC, true});
-    mReadQueue.push_back({GEAR_RATIO_1, true});
+	mReadQueue.push_back({VERSION_MAJOR, false});
+	mReadQueue.push_back({VERSION_MINOR, false});
+	mReadQueue.push_back({TYPE_CIRC, true});
+	mReadQueue.push_back({GEAR_RATIO_1, true});
     mReadQueue.push_back({GEAR_RATIO_2, true});
     mReadQueue.push_back({GEAR_RATIO_3, true});
     mReadQueue.push_back({GEAR_RATIO_4, true});
@@ -231,13 +290,14 @@ void MainWindow::reloadConfig()
     mReadQueue.push_back({PID_P, true});
     mReadQueue.push_back({PID_I, true});
     mReadQueue.push_back({PID_D, true});
+	mReadQueue.push_back({FORCE_WG, true});
 
     // read boost table
     for (size_t i=0; i<6; ++i)
     {
         for (size_t j=0; j<7; ++j)
         {
-            mReadQueue.push_back({(BC_ADDR)(BOOST_TABLE_1 + i * 0x10 + j), false});
+			mReadQueue.push_back({(BC_ADDR)(BOOST_TABLE_1 + i * 0x10 + j), false});
         }
     }
 
@@ -246,31 +306,119 @@ void MainWindow::reloadConfig()
 
 void MainWindow::connectPort()
 {
-    mSnxComm = new SnxComm(this);
-    mSnxComm->open("\\\\.\\" + ui->comboBox->currentText());
-    ui->closeButton->setEnabled(true);
+	if (mSnxComm != nullptr)
+	{
+		return;
+	}
+//	mSnxProtocol = new SnxProtocol();
+	mSnxComm = new SnxComm(this);
+	bool ok = mSnxComm->open("\\\\.\\" + ui->comboBox->currentText());
+	if (! ok)
+	{
+		QMessageBox::warning(this, "Failed to open serial port",
+							 "The serial port open command failed");
+		delete mSnxComm;
+		mSnxComm = nullptr;
+		ui->actionConnect->setChecked(false);
+		ui->openButton->setEnabled(true);
+
+		return;
+	}
+//	mSnxProtocol->open("\\\\.\\" + ui->comboBox->currentText());
+	ui->closeButton->setEnabled(true);
     ui->openButton->setEnabled(false);
     ui->reloadButton->setEnabled(true);
+	ui->actionConnect->setChecked(true);
 
     // connect event
-    connect(mSnxComm, &SnxComm::onWriteByte, this, &MainWindow::onWriteByte);
-    connect(mSnxComm, &SnxComm::onWriteFloat, this, &MainWindow::onWriteFloat);
-    connect(mSnxComm, &SnxComm::onAddrError, this, &MainWindow::onAddrFloat);
+//	connect(mSnxProtocol, &SnxProtocol::onReadBytes, this, &MainWindow::onReadBytes);
+//	connect(mSnxProtocol, &SnxProtocol::onReadMemory, this, &MainWindow::onReadMemory);
+//	connect(mSnxProtocol, &SnxProtocol::onWriteAck, this, &MainWindow::onWriteAck);
 
-    mTimer->start(20);
+	//	connect(mSnxProtocol, &SnxProtocol::onError, this, &MainWindow::onError);
+	connect(mSnxComm, &SnxComm::onWriteByte, this, &MainWindow::onWriteByte);
+	connect(mSnxComm, &SnxComm::onWriteFloat, this, &MainWindow::onWriteFloat);
+	connect(mSnxComm, &SnxComm::onAddrError, this, &MainWindow::onAddrFloat);
+
+	mTimer->start(50);
 
     reloadConfig();
 }
 
 void MainWindow::closePort()
 {
-    mTimer->stop();
-    mSnxComm->close();
-    delete mSnxComm;
-    mSnxComm = nullptr;
-    ui->openButton->setEnabled(true);
-    ui->closeButton->setEnabled(false);
-    ui->reloadButton->setEnabled(false);
+	if (mSnxComm != nullptr)
+	{
+		mTimer->stop();
+	//	mSnxProtocol->close();
+	//	delete mSnxProtocol;
+	//	mSnxProtocol = nullptr;
+		mSnxComm->close();
+		delete mSnxComm;
+		mSnxComm = nullptr;
+		ui->openButton->setEnabled(true);
+		ui->closeButton->setEnabled(false);
+		ui->reloadButton->setEnabled(false);
+		ui->actionConnect->setChecked(false);
+	}
+}
+
+void MainWindow::onReadBytes(const std::vector<SnxProtocol::AddrInfo>& readInfo)
+{
+	auto setVersion = [&]()
+	{
+		ui->firmwareVersion->setText(
+					QString::number((int)this->mConfigData.mVersionMajor)
+					+ "."
+					+ QString::number((int)this->mConfigData.mVersionMinor));
+	};
+
+	for (const auto addrInfo : readInfo)
+	{
+		switch (addrInfo.mAddr)
+		{
+		case VERSION_MAJOR:
+			this->mConfigData.mVersionMajor = addrInfo.mValue;
+			setVersion();
+			break;
+		case VERSION_MINOR:
+			this->mConfigData.mVersionMinor = addrInfo.mValue;
+			setVersion();
+			break;
+		case GEAR:
+			ui->gearEdit->setText(QString::number((int)addrInfo.mValue));
+			break;
+		default:
+		{
+			// check if the addr is in the current displayed table
+			auto it = mAddrToTableItem.find(addrInfo.mAddr);
+			if (it != mAddrToTableItem.end())
+			{
+				// update the table
+				ui->tableWidget->item(it->second.first, it->second.second)
+						->setText(QString::number(int(addrInfo.mValue)));
+			}
+			else
+			{
+				qDebug("Received addr 0x%4x, unknwon", addrInfo.mAddr);
+			}
+		}
+		}
+	}
+
+	// trigger next read
+	processRead();
+}
+
+void MainWindow::onReadMemory(uint32_t addr, const std::vector<uint8_t>& data)
+{}
+
+void MainWindow::onWriteAck()
+{
+}
+
+void MainWindow::onError(SnxProtocol::Error error)
+{
 }
 
 MainWindow::~MainWindow()
@@ -305,12 +453,33 @@ uint8_t MainWindow::getMutData(uint8_t varId)
 
 void MainWindow::onWriteByte(uint16_t addr, uint8_t value)
 {
-    switch (addr)
+	auto setVersion = [&]()
+	{
+		ui->firmwareVersion->setText(
+					QString::number((int)this->mConfigData.mVersionMajor)
+					+ "."
+					+ QString::number((int)this->mConfigData.mVersionMinor));
+	};
+
+	switch (addr)
     {
-    case GEAR:
+	case VERSION_MAJOR:
+		this->mConfigData.mVersionMajor = value;
+		setVersion();
+		break;
+	case VERSION_MINOR:
+		this->mConfigData.mVersionMinor = value;
+		setVersion();
+		break;
+	case GEAR:
         ui->gearEdit->setText(QString::number((int)value));
-        break;
-    default:
+		mMeasures.mGear = value;
+		break;
+	case FORCE_WG:
+		mSimulationData.mForceWG = value;
+		ui->forceWGEdit->setText(QString::number((int)value));
+		break;
+	default:
     {
         // check if the addr is in the current displayed table
         auto it = mAddrToTableItem.find(addr);
@@ -400,7 +569,7 @@ void MainWindow::onWriteFloat(uint16_t addr, float value)
         mMeasures.mSpeed = value;
         break;
     case MAP:
-        ui->mapEdit->setText(QString::number(value, 'f', 2));
+		ui->mapEdit->setText(QString::number(value-1.0f, 'f', 2));
         mMeasures.mMAP = value;
         break;
     case THROTTLE:
@@ -409,8 +578,8 @@ void MainWindow::onWriteFloat(uint16_t addr, float value)
         mMeasures.mThrottle = value;
         break;
     }
-    case TARGET_BOOST:
-        ui->targetBoostEdit->setText(QString::number(value, 'f', 2));
+	case TARGET_BOOST:
+		ui->targetBoostEdit->setText(QString::number(value-1.0f, 'f', 2));
         mMeasures.mTargetBoost = value;
         break;
     case TARGET_OUTPUT:
@@ -476,6 +645,13 @@ void MainWindow::on_tyreCircumEdit_editingFinished()
         mSnxComm->writeFloat(TYPE_CIRC, mConfigData.mTyreSize);
 }
 
+void MainWindow::on_baseBoostEdit_editingFinished()
+{
+	mConfigData.mReferenceBoost = ui->baseBoostEdit->text().toFloat();
+	if (mSnxComm != nullptr)
+		mSnxComm->writeFloat(REF_BOOST, mConfigData.mReferenceBoost);
+}
+
 void MainWindow::on_pidPEdit_editingFinished()
 {
     mConfigData.mPidP = ui->pidPEdit->text().toFloat();
@@ -497,14 +673,26 @@ void MainWindow::on_pidDEdit_editingFinished()
         mSnxComm->writeFloat(PID_D, mConfigData.mPidD);
 }
 
+void MainWindow::on_buttonOpenLog_clicked()
+{
+
+}
+
+void MainWindow::on_forceWGEdit_editingFinished()
+{
+	mSimulationData.mForceWG = ui->forceWGEdit->text().toInt();
+	if (mSnxComm != nullptr)
+		mSnxComm->writeByte(FORCE_WG, mSimulationData.mForceWG);
+}
+
 QColor percentToColor(float percent)
 {
     percent = std::max(0.0f, percent);
     percent = std::min(100.0f, percent);
-    percent /= 100.0;
+	percent /= 100.0f;
     float r = 255 * (percent);
     float b = 255 * (1-percent);
-    return QColor(r, 20, b);
+	return QColor(int(r), 20, int(b));
 }
 
 void MainWindow::on_table_itemChanged(QTableWidgetItem *item)
@@ -605,4 +793,72 @@ void MainWindow::on_listTable_itemSelectionChanged()
                     ti.rowNames, ti.columnNames,
                     ti.baseAddr, ti.rowStride);
     }
+}
+
+void MainWindow::on_actionStart_Log_changed()
+{
+	if (ui->actionStart_Log->isChecked())
+	{
+		mLogger.startLog();
+	}
+	else
+	{
+		mLogger.stopLog();
+	}
+}
+
+void MainWindow::on_actionConnect_changed()
+{
+	if (ui->actionConnect->isChecked())
+	{
+		connectPort();
+	}
+	else
+	{
+		closePort();
+	}
+}
+
+void MainWindow::on_openButton_clicked()
+{
+
+}
+
+void MainWindow::on_buttonOpenMut_clicked()
+{
+	bool ok = mMutReader.open("\\\\.\\" + ui->portListMut->currentText());
+
+	if (! ok)
+	{
+		QMessageBox::warning(this, "Failed to open serial port",
+							 "The serial port open command failed");
+//		ui->actionConnect->setChecked(false);
+		ui->buttonOpenMut->setEnabled(true);
+
+		return;
+	}
+
+	ui->buttonOpenMut->setEnabled(false);
+	ui->buttonCloseMut->setEnabled(true);
+	ui->actionConnectMut->setChecked(true);
+}
+
+void MainWindow::on_buttonCloseMut_clicked()
+{
+	mMutReader.close();
+	ui->buttonOpenMut->setEnabled(true);
+	ui->buttonCloseMut->setEnabled(false);
+	ui->actionConnectMut->setChecked(false);
+}
+
+void MainWindow::on_actionConnectMut_changed()
+{
+	if (ui->actionConnectMut->isChecked())
+	{
+		on_buttonOpenMut_clicked();
+	}
+	else
+	{
+		on_buttonCloseMut_clicked();
+	}
 }

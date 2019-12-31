@@ -10,7 +10,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = boost_configurator
 TEMPLATE = app
-CONFIG += serialport
+#CONFIG += serialport
+QT += serialport
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -25,11 +26,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 INCLUDEPATH += D:\dev\perso\BoostControler\snxcomm
 LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug -lsnxcomm
-LIBS +=  -lws2_32
+#LIBS += -LD:\dev\perso\BoostControler\build-snxcomm-Desktop_Qt_5_9_1_MSVC2015_64bit-Debug -lsnxcomm
+LIBS += -lws2_32
 
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+	mutreader.cpp \
     qcustomplot.cpp \
     mutservice.cpp \
     logger.cpp \
@@ -38,6 +41,7 @@ SOURCES += \
 HEADERS += \
         mainwindow.h \
     config_data.h \
+	mutreader.h \
     qcustomplot.h \
     mutservice.h \
     logger.h \

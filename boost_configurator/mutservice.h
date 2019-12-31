@@ -98,7 +98,7 @@ private slots:
 
 	void handleError(QSerialPort::SerialPortError error)
 	{
-
+		(void) error;
 	}
 
 	void processMessage(const std::vector<uint8_t>& msg)
@@ -244,8 +244,8 @@ public:
 			writeByte(crc, msg, uint8_t(addr >> 8));
 			writeByte(crc, msg, uint8_t(addr & 0xff));
 		}
-		writeByte(crc, msg, crc);
-		mCommPort->write((char*)msg.data(), msg.size());
+		writeByte(crc, msg, static_cast<uint8_t>(crc));
+		mCommPort->write(reinterpret_cast<char*>(msg.data()), msg.size());
 	}
 
 	void readMemory(uint32_t addr, size_t size)
@@ -258,8 +258,8 @@ public:
 		writeByte(crc, msg, uint8_t(addr >> 8));
 		writeByte(crc, msg, uint8_t(addr & 0xff));
 		writeByte(crc, msg, uint8_t(size));
-		writeByte(crc, msg, crc);
-		mCommPort->write((char*)msg.data(), msg.size());
+		writeByte(crc, msg, uint8_t(crc));
+		mCommPort->write(reinterpret_cast<char*>(msg.data()), msg.size());
 	}
 
 	void writeBytes(const std::vector<AddrInfo>& writeInfos)
@@ -275,8 +275,8 @@ public:
 			writeByte(crc, msg, uint8_t(writeInfo.mAddr & 0xff));
 			writeByte(crc, msg, uint8_t(writeInfo.mValue));
 		}
-		writeByte(crc, msg, crc);
-		mCommPort->write((char*)msg.data(), msg.size());
+		writeByte(crc, msg, uint8_t(crc));
+		mCommPort->write(reinterpret_cast<char*>(msg.data()), msg.size());
 	}
 
 	void writeMemory(uint32_t addr, const std::vector<uint8_t>& data)
@@ -292,13 +292,13 @@ public:
 		{
 			writeByte(crc, msg, b);
 		}
-		writeByte(crc, msg, crc);
-		mCommPort->write((char*)msg.data(), msg.size());
+		writeByte(crc, msg, uint8_t(crc));
+		mCommPort->write(reinterpret_cast<char*>(msg.data()), msg.size());
 	}
 
 signals:
 	void onReadBytes(const std::vector<AddrInfo>& readInfo);
-	void onReadMemory(uint32_t addr, const std::vector<uint8_t>&  data);
+	void onReadMemory(uint32_t addr, const std::vector<uint8_t>& data);
 	void onWriteAck();
 	void onError(Error error);
 };

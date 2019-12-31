@@ -1,5 +1,6 @@
-#ifndef CONFIG_DATA_H
-#define CONFIG_DATA_H
+#pragma once
+
+#include <cstdint>
 
 enum BC_ADDR
 {
@@ -23,6 +24,11 @@ enum BC_ADDR
     BOOST_TABLE_5 = 0x0140,
     BOOST_TABLE_6 = 0x0150,
 
+	FORCE_WG	  = 0x0200,
+
+	VERSION_MAJOR = 0x1000,
+	VERSION_MINOR = 0x1001,
+
     RPM =       0x0020,
     SPEED =     0x0021,
     MAP =       0x0022,
@@ -38,7 +44,9 @@ enum BC_ADDR
 
 struct ConfigData
 {
-    float   mTyreSize;
+	uint8_t   mVersionMajor;
+	uint8_t   mVersionMinor;
+	float   mTyreSize;
     float   mGearRatio[6];
     float   mSpeedSensorRatio;
     float   mReferenceBoost;
@@ -82,11 +90,14 @@ struct RuntimeData
     float   mBoost;
     float   mThrottle;
     float   mSolDC;
-    uint8_t  mGear;
-    float    mTargetBoost;
+	uint8_t mGear;
+	float   mTargetBoost;
     float   mLoad;
     float   mCPULoad;
 };
 
-
-#endif // CONFIG_DATA_H
+struct SimulationData
+{
+	// Force waster gate activation. 1 to 100%. 0 to deactivate override.
+	uint8_t mForceWG = 0;
+};
