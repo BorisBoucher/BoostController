@@ -1,0 +1,5 @@
+BoostControlSimulator/debug/*
+snxcomm/debug/*
+snxcomm.pro.user*
+snxcomm/Makefile*
+*/.qmake.stash
