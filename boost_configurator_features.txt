@@ -1,0 +1,62 @@
+
+
+Comm avec BC
+	* Thread de gestion du port série
+	* Démarre sur connecte, stop sur close.
+	* En cas d'erreur de comm, retente automatiquement de se synchroniser.
+	* Reçoit des consignes sur une queue d'entrée pour : 
+		- les lectures
+		- les écritures
+	* Poste les résultats de lecture, d'écriture et des évènements de connexion sur une queue de sortie.
+	* Etat courant de la liaison disponible à la consultation par getter.
+	
+Module d'état:
+	* Contient une image instantanée de l'ensemble des paramètres R/W du BC.
+	* Configuré avec une liste de paramètres associés à un descripteur:
+		- Nom symbolique
+		- Unité (Hz, °C, ...)
+		- Plage de valeur (0..7000RPM, -40°C..120°C, ...)
+		- Adresse dans table mémoire BC
+		- Type (entier, flottant)
+		- Formule de conversion (y compris masquage pour les bits agrégés sur un octet)
+		- Flag d'historisation/logging
+	* Reçoit les consignes pour les lectures périodiques
+		- Les lectures sont groupées par période
+		- Chaque groupe lu donne lieu à une notification
+		- Les lectures des paramètres des groupes de périodes élevées sont entrelacés avec les 
+		lectures de plus petites périodes
+			ex : 1,1,1,2,3,^1 1,1,1,2,2,^1,^2 1,1,1,2,3,^1,^3 1,1,1,2,2,^1,^2 1,1,1,2,^1 1,1,1,2,2,3,^1,^2,^3 
+		- Agrège les lectures périodiques multiples sur la même adresse (par ex, plusieurs bits sur 
+		un octet = plusieurs lectures périodique => agrégé en une seule lecture de la plus petite période)
+	* Traite la queue de sortie du module COM pour la mise à jour des paramètres
+	* Expose des setters pour modifier des valeurs, provoquent l'écriture vers la COMM.
+		* Les écritures échouées sont retentées indéfiniment.
+	* Sur évènement de connexion établie, réalise une lecture initial des paramètres.
+	* Propose une interface 'observateur' pour notifier les résultats des lectures périodiques
+
+Module logger:
+	* En charge de l'enregistrement des logs de fonctionnement
+	* Observateur du module d'état
+	* Formate les paramètres dans un fichier selon un format prédéfini.
+	* Enregistre les évènements de connexion et déconnexion
+	* Propose des fonctions pour activer/stopper le log
+	
+Module historique:
+	* En charge de l'historisation des paramètres en mémoire
+	* Observateur du module d'état
+	* Permet le chargement d'un fichier de log pour reconstruire un historique en mémoire.
+	* Propose une interface 'observateur' pour notifier les changements de l'historique.
+	* Expose des méthodes pour consulter l'historique:
+		- Liste des paramètres
+		- Période de temps couverte
+		- Extraction d'une plage de valeurs pour un paramètre
+	* Reset automatique en cas d'ouverture de connexion
+		
+Module graph:
+	* En charge de la représentation des données historisées
+	* Observateur du module historique pour les mise à jour auto
+	* Configuré avec la liste des paramètres à afficher.
+	* Déduit automatiquement la plage d'affichage du descripteur du paramètre.
+
+	
+	

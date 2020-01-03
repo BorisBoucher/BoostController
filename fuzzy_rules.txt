@@ -1,0 +1,73 @@
+
+Fuzzy boost control
+
+Inputs:
+	* MAP	(bar, abs)
+	* MAP'	(bar/s)
+	* THROTTLE	(%)
+	* THROTTLE'	(%/s)
+	* ENG_SPEED	(Hz)
+	* ENG_SPEED	(Hz/s)
+	* GEAR	(1..5)
+	* TARGET_MAP (bar, 1.7)
+
+Input classifier:
+	* MAP:
+	  VL     L    G   H    VH
+	 ---\    ^    ^   ^   /---
+	     \ /   \ / \ / \ /
+		  X     X   X   X
+	     / \   / \ / \ / \
+     0 0.8  1.4  1.7 1.8 1.9
+	 
+	* MAP'
+	  FQ     F     S     R     RQ
+	 ---\    ^     ^     ^    /---
+	     \ /   \ /   \ /   \ /
+		  X     X     X     X
+	     / \   / \   / \   / \
+      -1.0 -0.5    0    0.5   1.0
+	  
+	* THROTTLE
+	    C    PC    H    PO    WO
+	    \    ^     ^     ^    /
+	     \ /   \ /   \ /   \ /
+		  X     X     X     X
+	     / \   / \   / \   / \
+	    0    20    50    75   100
+		
+	* THROTTLE'
+       QC    C     S     O    QO	
+	 ---\    ^     ^     ^    /---
+	     \ /   \ /   \ /   \ /
+		  X     X     X     X
+	     / \   / \   / \   / \
+	  -1000 -500   0    500   1000
+    
+	* ENG_SPEED : no fuzzy table
+	* ENG_SPEED'
+	   
+Output:
+	* WGDC (%)
+       OFF  LO    MID    HI  FULL
+    	\    ^     ^     ^    /
+    	 \ /   \ /   \ /   \ /
+    	  X	    X     X     X
+    	 / \   / \   / \   / \
+    	0   25     50   75    100
+	
+Rule for fuzzy boost control
+	* if MAP is VL then WGDC is FULL
+	* if MAP is L  then WGDC is HI
+	* if MAP is G then WGDC is MID
+	* if MAP is H then WGDC is LO
+	* if MAP is VH then WGDC is OFF
+	
+	* if MAP' is FQ and MAP is not VH then WGDC is FULL
+	* if MAP' is F and MAP is not VH then WGDC is HI
+	* if MAP' is S then WGDC is MID
+	* if MAP' is R and (MAP is G or MAP is H or MAP is VH) then WGDC is OFF
+	* if MAP' is RQ and MAP is L then WGDC is MID
+	* if MAP' is RQ and (MAP is G or MAP is H or MAP is VH) then WGDC is OFF
+
+	* 

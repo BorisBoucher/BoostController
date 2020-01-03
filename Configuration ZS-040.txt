@@ -1,0 +1,56 @@
+Module Bluetooth ZS-040
+
+La configuration du module ne peut se faire que côté liaison RX/TX électrique.
+Ca ne fonctionne pas côté Bluetooth !
+
+Arduino IDE utilise 57600 baud.
+
+Utiliser un terminal sans ajouter de fin de lignes:
+
+AT+VERSION		hc01.comV2.0
+
+AT – connection test command. Returns OK
+
+AT+BAUD AT+BAUD1 – sets the baud rate to 1200 and returns OK1200
+AT+BAUD2 – sets the baud rate to 2400 and returns OK2400
+
+Other possible baud rates are
+	1——— 1200
+	2——— 2400
+	3——— 4800
+	4——— 9600
+	5——— 19200
+	6——— 38400
+	7——— 57600
+	8——— 115200
+	9——— 230400
+	A——— 460800
+	B——— 921600
+	C——— 1382400
+Be careful with speeds over 115200 when using a Windows computer.
+
+AT+NAME Sets the name of the module. This is the name that is broadcast to other devices. 
+	Maximum length is 20 characters.
+AT+NAMEmyBluetooth sets the name to myBluetooth, returns OKsetname
+
+AT+PIN Changes the PIN/password.
+AT+PIN9999 – changes the PIN to 9999, returns OKsetPIN
+
+AT+VERSION
+returns the firmware version – hc01.comV2.0
+
+AT+LED turns off the on board LED. This is the blue LED on the small daughter board not the red 
+	LED on the larger breakout board.
+
+AT+LED0 – turn off the blue LED, returns LED ON
+AT+LED1 – turn on the blue LED, returns LED ON
+
+AT+PN sets no parity
+AT+PE sets even parity
+AT+PO sets odd parity
+
+The modules accept AT+ROLE commands but they don’t seemed to do anything.
+AT+ROLE=S puts the module in to SLAVE mode, returns OK+ROLE:S
+AT+ROLE=M puts the module in to MASTER mode, returns OK+ROLE:M
+The commands are accepted and I originally thought this may mean the modules can be used as HC-05s 
+but I get any of the usual HC-05 commands to work; ROLE, AT+ROLE, AT+ROLE=, AT+ROLE? doesn’t work.

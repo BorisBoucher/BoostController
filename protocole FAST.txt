@@ -1,0 +1,130 @@
+Sonix Fast protocol
+====================
+
+Design goals:
+-------------
+This protocol is designed for low line speed, high data rate logging and control.
+
+Messages are optimized for better data density.
+Each command can only read or write one byte of data or one 16 bits data word.
+
+Communication is master/slave, the device being the slave and responding to read or write commands
+comming from the logger/controler PC.
+
+Message Format:
+---------------
+
+12 bits addressing : 
+	2048 bytes of data, from 0x000 to 0x1ff
+	2048 16 bit words,  from 0x200 to 0x3ff
+
+General format (these are not bytes !) :
+Req:
+	HDR ADDR [value]
+Resp:
+	value
+
+HDR + ADDR  are combined into 2 bytes : 4 bits header followed by 4 high address bits then 8 
+										low address bits:
+	hhhhaaaa aaaaaaaa
+
+Header is b0101 (0x5.) for reading request, b1010 (0xa.) for writing request.
+
+Reading:
+********
+	Reading request: 2 bytes
+		0101aaaa aaaaaaaa
+	Reading response: 1 bytes or 2 bytes
+		dddddddd			: 1 byte data
+		hhhhhhhh llllllll	: 2 bytes word, MSB first
+		
+Writing:
+********
+	Writing request: 3 bytes or 4 bytes
+		10100aaa aaaaaaaa dddddddd			: 1 byte data
+		10101aaa aaaaaaaa hhhhhhhh llllllll	: 2 bytes word, MSB first
+	Writing response: 1 byte or 2 bytes (echo confirmation)
+		dddddddd
+		hhhhhhhh llllllll
+	
+Memory mapping:
+===============
+
+0x000 - 0x1ff	2048 single byte memory zone
+
+	Addr	Format		Factor		Desc
+	0x000	u8			0.02		MAP, bar, 0..5,12
+	0x001	u8			1			Throttle pos, %, 0..100
+	0x002	u8			1			Solenoid duty cycle, %, 0..100
+	0x003	u8			1			Gear, 0..6 (0 unknown)
+	0x004	u8			1			Engine load, %, 0..256
+	0x005	u8			1			CPU load, %, 0..100
+	0x006	u8			0.02		Target boost, bar, 0..5,12
+	0x007	u8			0.02		Target output, bar, 0..5,12
+
+	0x009	u8[5][4]	1			Boost x Load to Sol DC, %, 0..100, 20 items
+	0x01d	u8[6][7]	1			Gear x RPM boost table, %, 0..200, 42 items
+	0x047	u8[6]		1			Throttle adjust table, %, 0..200
+	0x04d	u8[7]		1			Throttle deriv adjust table, %, 0..200
+	
+	0x054	u8			1			Solenoid duty cycle test command, 0..100 (0 : test off)
+	0x055	u8			1			Firmware major version
+	0x056	u8			1			Firmware minor version
+
+0x200 - 0x3ff	2048 16 bits words
+
+	Addr	Format	Factor	Desc
+	0X200	u16		0.001	Tire circumference, m, 0..65,535m
+	0x201	u16		0.001	1st gear ratio, 0.001, 0..65,535
+	0x202	u16		0.001	2nd gear ratio, 0.001, 0..65,535
+	0x203	u16		0.001	3rd gear ratio, 0.001, 0..65,535
+	0x204	u16		0.001	4th gear ratio, 0.001, 0..65,535
+	0x205	u16		0.001	5th gear ratio, 0.001, 0..65,535
+	0x206	u16		0.001	6th gear ratio, 0.001, 0..65,535
+	0x207	u16		0.001	Speed conversion factor, hz/km/h, 0.001, 0..65,535
+	0x208	u16		0.001	Reference boost, bar, 0.001, 0..65,535
+
+	0x209	u16		0.001	PID P factor, 0.001, 0..65,535
+	0x20a	u16		0.001	PID I factor, 0.001, 0..65,535
+	0x20b	u16		0.001	PID D factor, 0.001, 0..65,535
+
+	0x20c	u16		1		RPM, 1, 0..65535
+	0x20d	u16		1		SPEED, km/h, 0..65535
+	0x20e	s16		1		Throttle pos deriv, %/s, -32768..32767
+	0x20f	u16		1		Air flow, Hz, 0..65535
+
+BC ECU memory mapping:
+------------------
+
+0x0000 - 0x00ff		R/-		Direct mapping of MUT memory. Access is slow (requires MUT request).
+							See MUT address.
+0x0100 - 0x01ff		R/W		Automatic polling of MUT memory. Value indicates the polling period 
+							(counted in polling loop, not time). 0 to disable the polling, n to read
+							the memory address every n loop.
+0x0200 - 0x02ff		R/-		Last cached MUT memory automatic polling value.
+0x0300 - 0x03ff		R/-		Sensor data
+					
+	Addr	Size	Format		Desc
+	0x0300	2		u16			Speed, km/h [0..65535]
+	0x0302	2		u16			Engine speed, RMP [0..65535]
+	0x0304	2		f7.8		MAP, bar [-128.0 .. 127.996]
+	0x0306	2		u16			MAF, Hz [0..65535]
+	0x0308	2		f7.8		Estimated load, 1 = 100% VE NA (ie 1.5L/rev) [-128.0 .. 127.996]
+	0x030a	1		u8			Waste gate DC, % [0..100]
+	0x030b	1		u8			Current gear [0..255], 0 for undetermined/neutral
+	0x030c	2		f7.8		Current absolute boost target, bar [-128.0 .. 127.996]
+	0x030e	
+					
+0x0400 - 0x4ff		R/W		BC config
+
+	Addr	Size	Format		Desc
+	0x0400	2		f7.8		Base boost target, bar [-128.0 .. 127.996]
+	0x0402	3*2		f7.8		Boost control PID factors [-128.0 .. 127.996]
+	0x0308	6*2		f7.8		Gear boost table correction factors [-128.0 .. 127.996]
+	0x0310	10*10*2	f7.8		Load vs RPM boost correction factors [-128.0 .. 127.996]
+	0x03d8	
+	
+	0x0312	2		f7.8		MAP, bar [0.0 .. 255.996]
+	0x0306	1		u8			Waste gate DC, % [0..100]
+
+	

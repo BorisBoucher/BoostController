@@ -1,0 +1,91 @@
+
+SNX Logger transport protocol
+
+ * Serial port, 115200baud max (if possible), 8N1
+ * Request/response
+ * Read or write request
+ * Special code for message startup for easy synchronisation in case of transmission error
+ * 16 bits addressing
+ * Max 256-4 bytes per request
+ * Checksum
+ 
+Message Format
+---------------
+
+STX(0x02) <SIZE> <DATA>[SIZE] <CHK>
+ 
+CMD :
+	'R' : Read block		:	STX 4 'R' <ADDR_HI> <ADDR_LO> <BLOCK_SIZE> <CHK>
+			Response:	STX (3+BLOCK_SIZE) 'R' <ADDR_HI> <ADDR_LO> <DATA>[BLOCK_SIZE] <CHK>
+				NB: data size is deduced from message size
+				
+	'r' : Read bytes		:	STX (1+2*NB_BYTES) 'r' (<ADDR_HI> <ADDR_LO>)[NB_BYTES] <CHK>
+			Response:	STX (1+3*NB_BYTES) 'r' (<ADDR_HI> <ADDR_LO> <DATA>)[NB_BYTES] <CHK>
+				NB: number of bytes is deduced from message size
+				
+	'W' : Write	block	:	STX (3+BLOCK_SIZE) 'W' <ADDR_HI> <ADDR_LO> <DATA>[BLOCK_SIZE] <CHK>
+				NB: data size is deduced from message size
+			Response:	STX 0x01 'A' <CHK>	# 'Ack'
+				NB: response is returned once the write is processed.
+
+	'w' : Write	bytes	:	STX (1+3*NB_BYTES) 'w' (<ADDR_HI> <ADDR_LO> <DATA>)[NB_BYTES] <CHK>
+				NB: number of bytes is deduced from message size
+			Response:	STX 0x01 'A' <CHK>	# 'Ack'
+				NB: response is returned once the write is processed.
+				
+Exception (from ECU):
+	'X'	:				STX 0x02 'X' <CODE> <CHK>
+		CODE is one of: 
+			* 'C' : CRC control error on last received message
+			* 'R' : Read on unsupported address
+			* 'W' : Write on unsupported address
+			* 'L' : Write on read only address ('L'ock)
+			* 'O' : Overflow access (too much data)
+			* 'U' : Unknown command
+
+Escaping
+---------
+Any byte STX (0x02) presents in the message body is replaced by the sequence 0x03 0xf2.
+The byte 0x03 is replaced by the sequence 0x03 0xf3
+Repeated bytes are ignored in message size and checksum computation.
+
+Checksum
+--------
+Checksum is initialized to zero and contains the sum of all bytes after STX.
+
+
+BC ECU memory mapping:
+------------------
+
+0x0000 - 0x00ff		R/-		Direct mapping of MUT memory. Access is slow (requires MUT request).
+							See MUT address.
+0x0100 - 0x01ff		R/W		Automatic polling of MUT memory. Value indicates the polling period 
+							(counted in polling loop, not time). 0 to disable the polling, n to read
+							the memory address every n loop.
+0x0200 - 0x02ff		R/-		Last cached MUT memory automatic polling value.
+0x0300 - 0x03ff		R/-		Sensor data
+					
+	Addr	Size	Format		Desc
+	0x0300	2		u16			Speed, km/h [0..65535]
+	0x0302	2		u16			Engine speed, RMP [0..65535]
+	0x0304	2		f7.8		MAP, bar [-128.0 .. 127.996]
+	0x0306	2		u16			MAF, Hz [0..65535]
+	0x0308	2		f7.8		Estimated load, 1 = 100% VE NA (ie 1.5L/rev) [-128.0 .. 127.996]
+	0x030a	1		u8			Waste gate DC, % [0..100]
+	0x030b	1		u8			Current gear [0..255], 0 for undetermined/neutral
+	0x030c	2		f7.8		Current absolute boost target, bar [-128.0 .. 127.996]
+	0x030e	
+					
+0x0400 - 0x4ff		R/W		BC config
+
+	Addr	Size	Format		Desc
+	0x0400	2		f7.8		Base boost target, bar [-128.0 .. 127.996]
+	0x0402	3*2		f7.8		Boost control PID factors [-128.0 .. 127.996]
+	0x0308	6*2		f7.8		Gear boost table correction factors [-128.0 .. 127.996]
+	0x0310	10*10*2	f7.8		Load vs RPM boost correction factors [-128.0 .. 127.996]
+	0x03d8	
+	
+	0x0312	2		f7.8		MAP, bar [0.0 .. 255.996]
+	0x0306	1		u8			Waste gate DC, % [0..100]
+
+	
