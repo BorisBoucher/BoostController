@@ -223,6 +223,7 @@
 	0x0028		float  x    Target Boost (bar)
 	0x0029		float  x    Target output (bar)
 	0x002a		float  x    Throttle pos deriv (%/s)
+	0x002b		float  x    Air flow (Hz)
 
 	0x0030		byte[5][4] x	Boost vs load table used to convert the target boost into solenoid duty cycle
 	0x0044
@@ -237,7 +238,7 @@
 	0x160		byte[6] Throttle boost adj
 	0x170		byte[7] Throttle' boost adj
 
-  # Testing prasm
+  # Testing command
   0x200   byte    Force waste gate output ratio (0..100)
 
 	0x1000		byte		x	Firmware version, major
@@ -283,13 +284,18 @@ FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
 // I/O Pins 
 #define RPM_IN	12
 #define SPEED_IN 11
+#define AIRFLOW_IN 10
 #define SOLENOID_OUT 13
-#define DEBUG_OUT 10
+#define DEBUG_OUT 9
 //#define SOLENOID_OUT 10
 //#define MAP_IN A6		
 //#define THROTTLE_IN A7	
 #define MAP_IN A5    
 #define THROTTLE_IN A6  
+
+// Debug PIN
+#define SPEED_OUT 16
+#define RPM_OUT 15
 
 // Other constants
 #define LOOP_PERIOD 10	// loop period in ms
@@ -331,14 +337,14 @@ struct Config
 	// 6 row (1 per gear), 7 RPM column values (1000 to 7000 RPM => boost %)
 	uint8_t	boostTable[6][7] = 
 	{
-		{  1,  70,  70,  70,  70,  70,  70},
-		{  2,   2,   3,   4,   5,   6,   7},
-		{  3, 100, 100, 100, 100, 100, 100},
-		{  4, 100, 100, 100, 100, 100, 100},
-		{  5, 100, 100, 100, 100, 100, 100},
-		{  6, 100, 100, 100, 100, 100, 255},
+		{  70,  70,  70,  70,  70,  70,  70},
+		{  70, 100, 100, 100, 100, 100,  80},
+		{  70, 100, 100, 100, 100, 100,  80},
+		{  70, 100, 100, 100, 100, 100,  80},
+		{  70, 100, 100, 100, 100, 100,  80},
+		{  70, 100, 100, 100, 100, 100,  80},
 	};
-	
+
 	// Boost throttle table, 6 values (0 to 100% throttle => boost %)
 	uint8_t throttleBoostTable[6] = 
 	{
@@ -384,6 +390,8 @@ struct Measurement
 	float	THROTTLE = 0.0f;
 	// Throttle deriv in %/s (-1000..1000%/s)
 	float	THROTTLE_DERIV = 0.0f;
+  // Air flow HZ
+  float AIR_FLOW = 0.0f;
 	// Solenoid duty cycle in % (0..100)
 	float	SOL_DC = 0.0f;
 	// Computed gear (0..5 or 6)
@@ -424,10 +432,16 @@ uint32_t	gLastSPEEDDate = 0;
 uint32_t	gSPEEDBuffer[4] = {0,0,0,0};
 uint8_t		gSPEEDBufferHead = 0; 
 uint32_t	gSPEEDAccum = 0;
+uint32_t  gLastAirFlowDate = 0;
+uint32_t  gAirFlowBuffer[4] = {0,0,0,0};
+uint8_t   gAirFlowBufferHead = 0;
+uint32_t  gAirFlowAccum = 0;
 // RPM period in µs, 0 means no signal.
 volatile uint32_t	gRPMPeriod = INT32_MAX;
 // SPEED period in µs, 0 means no signal.
 volatile uint32_t	gSPEEDPeriod = INT32_MAX;
+// Air flow period in µs, 0 means no signal.
+volatile uint32_t  gAirFlowPeriod = INT32_MAX;
 
 // Main loop variables
 uint32_t	gLastEvalCycle = 0;
@@ -436,7 +450,8 @@ float gThrottleDerivFilter[16] = {0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0};
 int gThrottleDerivFilterIndex = 0;
 
 bool debugState = false;
-
+bool rpmOut = false;
+bool speedOut = false;
 #define TOGGLE_DEBUG     digitalWrite(DEBUG_OUT, debugState);    debugState = !debugState;
 
 
@@ -452,7 +467,7 @@ ISR (PCINT0_vect)
 	uint8_t changed = b ^ gLastInputPinState;
 	// save last nown state of port B
 	gLastInputPinState = b;
-
+  
 //  if (changed & 0x0f)
 //  if (changed)
 //  {
@@ -463,8 +478,10 @@ ISR (PCINT0_vect)
 	if ((changed & 0x10) && (b & 0x10))
 	{
 //    digitalWrite(13,digitalRead(RPM_IN) and digitalRead(SPEED_IN));
-    TOGGLE_DEBUG
-  
+//    TOGGLE_DEBUG
+//    digitalWrite(RPM_OUT, rpmOut);    
+    rpmOut = !rpmOut;
+
 		// RPM changed !
 		uint32_t period = now - gLastRPMDate;
 		gLastRPMDate = now;
@@ -474,11 +491,15 @@ ISR (PCINT0_vect)
 		gRPMAccum += period;
 		
 		gRPMPeriod = gRPMAccum>>2;
+//    gRPMPeriod = period;
 	}
 	// Check SPEED raising edge
 	if ((changed & 0x08) && (b & 0x08))
 	{
-		// RPM changed !
+//    digitalWrite(SPEED_OUT, speedOut);
+    speedOut = !speedOut;
+
+		// Speed changed !
 		uint32_t period = now - gLastSPEEDDate;
 		gLastSPEEDDate = now;
 		gSPEEDAccum -= gSPEEDBuffer[gSPEEDBufferHead];
@@ -487,7 +508,22 @@ ISR (PCINT0_vect)
 		gSPEEDAccum += period;
 		
 		gSPEEDPeriod = gSPEEDAccum>>2;
+//    gSPEEDPeriod = period;
 	}
+  // Check AIR FLOW raising edge
+  if ((changed & 0x04) && (b & 0x04))
+  {
+    // Air flow changed !
+    uint32_t period = now - gLastAirFlowDate;
+    gLastAirFlowDate = now;
+    gAirFlowAccum -= gAirFlowBuffer[gAirFlowBufferHead];
+    gAirFlowBuffer[gAirFlowBufferHead++] = period;
+    gAirFlowBufferHead &= 0x3;
+    gAirFlowAccum += period;
+    
+    gAirFlowPeriod = gAirFlowAccum>>2;
+//    gAirFlowPeriod = period;
+  }
 }
 
 void pciSetup(byte pin)
@@ -531,19 +567,35 @@ void loadConfig()
   refVi.mVersionString[8] = CONFIG_VER;
 	VersionInfo vi;
 	EEPROM.get(0, vi);
+
+  Serial.write("Version info loaded : ");
+  Serial.write(vi.mVersionString);
+  Serial.write("\n");
+
 	if (refVi != vi)
 	{
 		// no data, or need conversion
 		return;
 	}
+  
+  Serial.write("Loading conf\n");
 	EEPROM.get(16, gConfig);
+  Serial.write("Conf loaded\n");
 }
 
 void setup()
 {
+  // Init serial port @57600 baud, 8N1
+  Serial.begin(57600);
+
+  Serial.write("init\n");
+  Serial.write("load config\n");
+
 	// load conf
-//	loadConfig();
-	
+	loadConfig();
+
+  Serial.write("set pinMode\n");
+
 	// Configure IO pins
 //	pinMode(8, INPUT_PULLUP);
 //	pinMode(9, INPUT_PULLUP);
@@ -553,19 +605,23 @@ void setup()
 //	pinMode(13, INPUT_PULLUP);
 	pinMode(RPM_IN, INPUT_PULLUP);
 	pinMode(SPEED_IN, INPUT_PULLUP);
+  pinMode(AIRFLOW_IN, INPUT);
 	pinMode(SOLENOID_OUT, OUTPUT);
   pinMode(DEBUG_OUT, OUTPUT);
-	pinMode(SOLENOID_OUT, OUTPUT);
-	
+
+  // Debug pin
+  pinMode(SPEED_OUT, OUTPUT);
+  pinMode(RPM_OUT, OUTPUT);
+
 	// Configure analog input
 	//TODO
 
-	// Init serial port @57600 baud, 8N1
-	Serial.begin(57600);
+  Serial.write("pci setup\n");
 
 	// activate pin change interrupt
 	pciSetup(RPM_IN);
 	pciSetup(SPEED_IN);
+  pciSetup(AIRFLOW_IN);
 }
 
 // PID state variables
@@ -605,7 +661,7 @@ float interp(byte* table, float indexf)
   int index1 = (int) floor(indexf);
   int index2 = (int) ceil(indexf);
   float alpha = indexf - index1;
-  byte delta = table[index2] - table[index1];
+  float delta = float(table[index2]) - float(table[index1]);
   return table[index1] + delta * alpha;
 }
 
@@ -629,8 +685,14 @@ void evalCycle()
 	cli();
 	uint32_t RPMPeriod = gRPMPeriod;
 	uint32_t SPEEDPeriod = gSPEEDPeriod;
+  uint32_t airFlowPeriod = gAirFlowPeriod;
+  uint32_t lastRPMDate = gLastRPMDate;
+  uint32_t lastSPEEDDate = gLastSPEEDDate;
+  uint32_t lastAirFlowDate = gLastAirFlowDate;
 	SREG = oldSREG;
-	
+
+  uint32_t now = micros();
+  
 	// Analog read : very costly when done without interrupt : 100µs per read !
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric presure)...
 //	if (true)
@@ -674,12 +736,53 @@ void evalCycle()
 		gMeasures.THROTTLE_DERIV += gThrottleDerivFilter[i];
 	}
 	gLastThrottle = gMeasures.THROTTLE;
-  
+
+  // Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200.000µs
+  if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
+  {
+    // 0 stand for 0 RPM
+    RPMPeriod = 0;
+  }
+  // Detect 0 Speed : last pulse > 1km/h period : 1Kmh/0.73 = 1.36s=1.360.000µs
+  if (SPEEDPeriod > 0 and (now - lastSPEEDDate) > 1360000)
+  {
+    // 0 stand for 0 speed
+    SPEEDPeriod = 0;
+  }
+  // Detect 0 Airflow: last pulse > 10Hz period (0.1s): 100.000µs
+  if (airFlowPeriod > 0 and (now - lastAirFlowDate) > 100000)
+  {
+    // 0 stand for 0 speed
+    airFlowPeriod = 0;
+  }
+
 	// Convert µs period into Hz
 	// RPM need an additional ratio of 3 to account for the number of cylinder fired each revolution.
-	gMeasures.RPM = 60.0f * 1000000.0f / (RPMPeriod * 3.0f);
-	gMeasures.SPEED = 1000000.0f / (SPEEDPeriod * gConfig.speedFactor);
-	
+  if (RPMPeriod > 0)
+  {
+	  gMeasures.RPM = 60.0f * 1000000.0f / (RPMPeriod * 3.0f);
+  }
+  else
+  {
+    gMeasures.RPM = 0.0f;
+  }
+  if (SPEEDPeriod > 0)
+  {
+	  gMeasures.SPEED = 1000000.0f / (SPEEDPeriod * gConfig.speedFactor);
+  }
+  else
+  {
+    gMeasures.SPEED = 0.0;
+  }
+  if (airFlowPeriod > 0)
+  {
+    gMeasures.AIR_FLOW = 1000000.0f / (airFlowPeriod);
+  }
+  else
+  {
+    gMeasures.AIR_FLOW = 0.0;
+  }
+  
 	computeGear();
 	
 	// Compute engine load
@@ -687,7 +790,7 @@ void evalCycle()
 	// 	0 bar MAP => 0% load,
 	//	2 bar MAP => 100% load (2 bar MAP means 1 bar turbo pressure)
 	gMeasures.LOAD = constrain((gMeasures.MAP * 0.5f) * 100.0f, 0.0f, 100.0f);
-	
+
 	// compute solenoid DC 
 	//--------------------
 	// 1st, choose the target boost in the gear table
@@ -697,7 +800,7 @@ void evalCycle()
 		
 		gMeasures.TARGET_BOOST = 
 				interp(gConfig.boostTable[gMeasures.GEAR-1], rpmIndex) * 0.01f
-				* (1.0f + gConfig.boostReference);
+				* (gConfig.boostReference);
 	}
 
   // Apply throttle correction
@@ -715,6 +818,9 @@ void evalCycle()
     gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
 //    gMeasures.TARGET_BOOST = interp(gConfig.throttleDerivBoostTable, throttleDerivIndex);
 //    gMeasures.TARGET_BOOST = throttleDerivIndex;
+
+    // Convert boost value into MAP value, just add the atmo pressure ;)
+    gMeasures.TARGET_BOOST += 1.0f;
   }
 
   gMeasures.TARGET_BOOST = targetLowpassFilter.input(gMeasures.TARGET_BOOST);
@@ -730,7 +836,7 @@ void evalCycle()
   }
   else
   {
-    // too mush error, windup integral
+    // too much error, windup integral
     gErrorInteg = 0.0f;
   }
 //	gErrorDeriv += ((gMeasures.MAP - gLastMAP) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
@@ -935,7 +1041,9 @@ class CommManager
       return &gMeasures.TARGET_OUTPUT;
     case 0x002a:
       return &gMeasures.THROTTLE_DERIV;
-		}
+    case 0x002b:
+      return &gMeasures.AIR_FLOW;
+}
 
     static float failed = NAN;
 		return &failed;
