@@ -37,6 +37,7 @@ class MutReader : public QObject
 public:
 
 	explicit MutReader(QObject *parent = nullptr);
+	~MutReader();
 
 	bool open(const QString& portName);
 	void close();

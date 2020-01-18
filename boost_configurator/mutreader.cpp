@@ -20,6 +20,10 @@ MutReader::MutReader(QObject *parent) : QObject(parent)
 	};
 }
 
+MutReader::~MutReader()
+{
+	close();
+}
 
 bool MutReader::open(const QString& portName)
 {
@@ -104,7 +108,6 @@ void MutReader::run()
 	size_t loop = 0;
 	do
 	{
-
 		// Each loop
 		data.mKnockCount = readParam(0x26);
 		data.mIgnAdv = readParam(0x06) - 20;

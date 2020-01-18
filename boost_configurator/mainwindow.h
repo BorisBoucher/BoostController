@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <initializer_list>
 #include <QMainWindow>
 #include <deque>
 #include <QtCharts/QChart>
@@ -9,7 +10,8 @@
 #include <QListWidgetItem>
 
 
-#include "../snxcomm/snxcomm.h"
+//#include "../snxcomm/snxcomm.h"
+#include "../snxcomm/fastcom.h"
 #include "config_data.h"
 #include "mutservice.h"
 #include "logger.h"
@@ -23,29 +25,42 @@ class MainWindow : public QMainWindow, public IMutDataProvider
 {
     Q_OBJECT
 
-	SnxProtocol* mSnxProtocol = nullptr;
+//	SnxProtocol* mSnxProtocol = nullptr;
+	FastCom* mFastCom = nullptr;
 	MutService	mMutService;
-	SnxComm* mSnxComm = nullptr;
+//	SnxComm* mSnxComm = nullptr;
     QTimer* mTimer = nullptr;
 //    QtCharts::QLineSeries *mSeries = nullptr;
 //    QtCharts::QChart* mChart = nullptr;
 
-    ConfigData  mConfigData;
-    Measures    mMeasures;
+	ConfigData  mConfigData;
+	Measures    mMeasures;
 	SimulationData   mSimulationData;
-
-    struct ReadItem
-    {
-        BC_ADDR mAddr;
-        bool    mIsFloat;
-    };
-
-    std::deque<ReadItem>   mReadQueue;
-    time_t  mLastReadResult = 0;
 
 	Logger	mLogger;
 
 	MutReader mMutReader;
+
+	struct Accessor
+	{
+		// If true, data is stored as float, otherwize as byte.
+		bool mIsFloat;
+		uint16_t mAddr;
+		float mFactor;
+		bool mSigned;
+		size_t mOffset;
+	};
+
+	std::map<uint16_t, Accessor> mAccessors;
+
+	void processFastcomReads();
+	void fastComWrite(const std::initializer_list<uint16_t>& addrs);
+	void readFastCom(const std::initializer_list<uint16_t>& addrs);
+	void setPeriodicRead(const std::initializer_list<std::pair<uint16_t, size_t>>& addrs);
+	void initAccessors();
+	uint8_t* getByteParam(uint16_t addr);
+	// Return true if the value changed effectively
+	bool setByteParam(uint16_t addr, uint8_t value);
 
 public:
 	explicit MainWindow(QWidget *parent = nullptr);
@@ -53,19 +68,17 @@ public:
 
 	virtual uint8_t	getMutData(uint8_t varId) override final;
 
+	void notifyReads(const std::set<uint16_t>& addrs);
 public slots:
     void sceneRectChanged(const QRectF &rect);
     void update();
     void reloadConfig();
     void connectPort();
     void closePort();
-	void onWriteByte(uint16_t addr, uint8_t value);
-	void onWriteFloat(uint16_t addr, float value);
-	void onAddrFloat(uint16_t addr);
-	void onReadBytes(const std::vector<SnxProtocol::AddrInfo>& readInfo);
-	void onReadMemory(uint32_t addr, const std::vector<uint8_t>& data);
-	void onWriteAck();
-	void onError(SnxProtocol::Error error);
+//	void onWriteByte(uint16_t addr, uint8_t value);
+//	void onAddrFloat(uint16_t addr);
+//	void onReadBytes(const std::vector<SnxProtocol::AddrInfo>& readInfo);
+//	void onError(SnxProtocol::Error error);
 
 private slots:
     void on_reloadButton_clicked();
@@ -78,15 +91,13 @@ private slots:
 
     void on_pidDEdit_editingFinished();
 
-    void on_table_itemChanged(QTableWidgetItem *item);
+	void on_table_itemChanged(QTableWidgetItem *item);
 
     void on_listTable_itemActivated(QListWidgetItem *item);
 
     void on_listTable_itemSelectionChanged();
 
 	void on_baseBoostEdit_editingFinished();
-
-	void on_buttonOpenLog_clicked();
 
 	void on_forceWGEdit_editingFinished();
 
@@ -101,6 +112,17 @@ private slots:
 	void on_buttonCloseMut_clicked();
 
 	void on_actionConnectMut_changed();
+
+	void on_actionConnect_triggered();
+
+	void on_gear1Edit_editingFinished();
+	void on_gear2Edit_editingFinished();
+	void on_gear3Edit_editingFinished();
+	void on_gear4Edit_editingFinished();
+	void on_gear5Edit_editingFinished();
+	void on_gear6Edit_editingFinished();
+
+	void on_speedRatioEdit_editingFinished();
 
 private:
 
@@ -117,7 +139,7 @@ private:
 
     std::map<QString, TableInfo> mTableWidgets;
 
-    std::map<uint16_t, std::pair<int, int>> mAddrToTableItem;
+	std::map<uint16_t, std::pair<int, int>> mAddrToTableItem;
 
     void createTableWidget(QString name,
                            QString rowLabel,
@@ -128,8 +150,9 @@ private:
 
 	void resizeEvent(QResizeEvent *event) override;
 
+//	void recvFloat(uint16_t addr, float value);
 
-    void processRead();
+//    void processRead();
 
     Ui::MainWindow *ui;
 

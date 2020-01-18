@@ -27,7 +27,8 @@ void Logger::startLog()
 	out << "LogID,LogEntryDate,LogEntryTime,LogEntrySeconds,LogNotes,"
 		<< "TPS,RPM,Speed,Gear,TimingAdv,FuelTrim_Low,FuelTrim_Mid,FuelTrim_High,"
 		   "MAP,TargetBoost,WGDC,"
-		<< "knockSum,O2FuelTrim,O2Front,O2Rear,InjPulseFront,InjPulseRear,AccelEnrich"
+		<< "knockSum,O2FuelTrim,O2Front,O2Rear,InjPulseFront,InjPulseRear,AccelEnrich,"
+		<< "AirFlow"
 		<< endl;
 }
 
@@ -43,24 +44,25 @@ bool Logger::isStarted()
 }
 
 void Logger::addLogline(
-		float*	TPS,
-		float*	RPM,
-		float*	speed,
-		int gear,
-		float*	timingAdv,
-		float*	fuelTrimLow,
-		float*	fuelTrimMid,
-		float*	fuelTrimHigh,
-		float*	MAP,
-		float*	targetBoost,
-		float*	solDC,
-		int*	knockSum,
-		float*	O2FuelTrim,
-		float*	O2Front,
-		float*	O2Rear,
-		float*	injPulseFront,
-		float*	injPulseRear,
-		float*	accelEnrich
+		float* TPS,
+		float* RPM,
+		float* speed,
+		int    gear,
+		float* timingAdv,
+		float* fuelTrimLow,
+		float* fuelTrimMid,
+		float* fuelTrimHigh,
+		float* MAP,
+		float* targetBoost,
+		float* solDC,
+		int*   knockSum,
+		float* O2FuelTrim,
+		float* O2Front,
+		float* O2Rear,
+		float* injPulseFront,
+		float* injPulseRear,
+		float* accelEnrich,
+		float* airFlow
 		)
 {
 	if (isStarted())
@@ -120,8 +122,11 @@ void Logger::addLogline(
 				formatFloat(O2Rear, 2);
 				formatFloat(injPulseFront, 1);
 				formatFloat(injPulseRear, 1);
-				formatFloat(accelEnrich, false);
+				formatFloat(accelEnrich, 0);
+				formatFloat(airFlow, 0, false);
 				out << endl;
+
+		++mLogId;
 	}
 }
 

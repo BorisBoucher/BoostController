@@ -10,7 +10,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = boost_configurator
 TEMPLATE = app
-#CONFIG += serialport
 QT += serialport
 
 # The following define makes your compiler emit warnings if you use
@@ -26,7 +25,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 INCLUDEPATH += D:\dev\perso\BoostControler\snxcomm
 LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug -lsnxcomm
-#LIBS += -LD:\dev\perso\BoostControler\build-snxcomm-Desktop_Qt_5_9_1_MSVC2015_64bit-Debug -lsnxcomm
 LIBS += -lws2_32
 
 SOURCES += \

@@ -50,7 +50,8 @@ public:
 			float*	O2Rear,
 			float*	injPulseFront,
 			float*	injPulseRear,
-			float*	accelEnrich
+			float*	accelEnrich,
+			float* airFlow
 			);
 
 //	void loadLog(const QString& filename);

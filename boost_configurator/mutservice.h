@@ -201,7 +201,7 @@ public:
 
 	QSerialPort*	mCommPort = nullptr;
 
-	void open(const QString portName)
+	bool open(const QString portName)
 	{
 		mCommPort = new QSerialPort();
 		mCommPort->setPortName(portName);
@@ -215,6 +215,7 @@ public:
 		mCommPort->setParity(QSerialPort::NoParity);
 		bool ok = mCommPort->open(QIODevice::ReadWrite);
 
+		return ok;
 	}
 
 	void close()

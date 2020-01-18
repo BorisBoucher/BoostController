@@ -4,42 +4,53 @@
 
 enum BC_ADDR
 {
-    TYPE_CIRC =     0x0000,
-    GEAR_RATIO_1 =  0x0001,
-    GEAR_RATIO_2 =  0x0002,
-    GEAR_RATIO_3 =  0x0003,
-    GEAR_RATIO_4 =  0x0004,
-    GEAR_RATIO_5 =  0x0005,
-    GEAR_RATIO_6 =  0x0006,
-    SPEED_SENSOR_CAL=  0x0007,
-    REF_BOOST =     0x0008,
-    PID_P =         0x0010,
-    PID_I =         0x0011,
-    PID_D =         0x0012,
+	MAP =				0x000,
+	THROTTLE =			0x001,
+	WGDC =				0x002,
+	GEAR =				0x003,
+	ENG_LOAD =			0x004,
+	CPU_LOAD =			0x005,
+	TARGET_BOOST =		0x006,
+	TARGET_OUTPUT =		0x007,
 
-    BOOST_TABLE_1 = 0x0100,
-    BOOST_TABLE_2 = 0x0110,
-    BOOST_TABLE_3 = 0x0120,
-    BOOST_TABLE_4 = 0x0130,
-    BOOST_TABLE_5 = 0x0140,
-    BOOST_TABLE_6 = 0x0150,
+	DC_TABLE_1 =		0x008 + 0 * 4,	// 4 values
+	DC_TABLE_2 =		0x008 + 1 * 4,	// 4 values
+	DC_TABLE_3 =		0x008 + 2 * 4,	// 4 values
+	DC_TABLE_4 =		0x008 + 3 * 4,	// 4 values
 
-	FORCE_WG	  = 0x0200,
+	BOOST_GEAR_1 =		0x020 + 0 * 7,	// 7 values
+	BOOST_GEAR_2 =		0x020 + 1 * 7,	// 7 values
+	BOOST_GEAR_3 =		0x020 + 2 * 7,	// 7 values
+	BOOST_GEAR_4 =		0x020 + 3 * 7,	// 7 values
+	BOOST_GEAR_5 =		0x020 + 4 * 7,	// 7 values
+	BOOST_GEAR_6 =		0x020 + 5 * 7,	// 7 values
 
-	VERSION_MAJOR = 0x1000,
-	VERSION_MINOR = 0x1001,
+	THROTTLE_ADJ =		0x04a,		// 6 values
+	THROTTLE_DER_ADJ =	0x050,		// 7 values
 
-    RPM =       0x0020,
-    SPEED =     0x0021,
-    MAP =       0x0022,
-    THROTTLE =  0x0023,
-    SOL_DC =    0x0024,
-    GEAR =      0x0025,
-    LOAD =      0x0026,
-    CPU_LOAD =  0x0027,
-    TARGET_BOOST =  0x0028,
-    TARGET_OUTPUT = 0x0029,
-    THROTTLE_DERIV = 0x002a,
+	WGDC_TEST =			0x057,
+
+	VERSION_MAJOR =		0x058,
+	VERSION_MINOR =		0x059,
+
+	TYRE_CIRC =			0x800,
+	GEAR_RATIO_1 =		0x801,		// 6 values
+	GEAR_RATIO_2 =		0x802,		// 6 values
+	GEAR_RATIO_3 =		0x803,		// 6 values
+	GEAR_RATIO_4 =		0x804,		// 6 values
+	GEAR_RATIO_5 =		0x805,		// 6 values
+	GEAR_RATIO_6 =		0x806,		// 6 values
+	SPEED_RATIO =		0x807,
+	REF_BOOST =			0x808,
+
+	PID_P =				0x809,
+	PID_I =				0x80a,
+	PID_D =				0x80b,
+
+	RPM =				0x80c,
+	SPEED =				0x80d,
+	THROTTLE_DERIV =	0x80e,
+	AIR_FLOW =			0x80f
 };
 
 struct ConfigData
@@ -55,7 +66,10 @@ struct ConfigData
     float   mPidI;
     float   mPidD;
 
+	uint8_t	mWGDCTable[6][4];
     uint8_t  mBoostTable[6][7];
+	uint8_t  mThrottleTable[6];
+	uint8_t  mThrottleDerivTable[7];
 };
 
 struct Measures
@@ -69,7 +83,9 @@ struct Measures
     float	mThrottle = 0.0f;
     // Throttle deriv in %/s (-1000..1000%/s)
     float	mThrottleDeriv = 0.0f;
-    // Solenoid duty cycle in % (0..100)
+	// Air flow (Hz)
+	float	mAirFlow = 0.0f;
+	// Solenoid duty cycle in % (0..100)
     float	mSolDC = 0.0f;
     // Computed gear (0..5 or 6)
     uint8_t	mGear = 0;
