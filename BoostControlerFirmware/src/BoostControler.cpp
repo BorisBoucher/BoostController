@@ -279,7 +279,7 @@ FilterOnePole lowpassFilter( LOWPASS, 10.0f );
 FilterOnePole targetLowpassFilter( LOWPASS, 2.0f ); 
 
 #define VERSION_MAJOR	0
-#define VERSION_MINOR	1
+#define VERSION_MINOR	2
  
 // I/O Pins 
 #define RPM_IN	12
@@ -327,12 +327,12 @@ struct Config
 		0.0f
 	};
   */
-  float pidParam[3] = 
-  {
-    0.8f,
-    2.7f,
-    0.2f
-  };
+	float pidParam[3] = 
+	{
+		0.8f,
+		2.7f,
+		0.2f
+	};
 	
 	// 6 row (1 per gear), 7 RPM column values (1000 to 7000 RPM => boost %)
 	uint8_t	boostTable[6][7] = 
@@ -585,43 +585,38 @@ void loadConfig()
 
 void setup()
 {
-  // Init serial port @57600 baud, 8N1
-  Serial.begin(57600);
+  	// Init serial port @57600 baud, 8N1
+	Serial.begin(57600);
+//	Serial.begin(115200);
 
-  Serial.write("init\n");
-  Serial.write("load config\n");
+	Serial.write("init\n");
+	Serial.write("load config\n");
 
 	// load conf
 	loadConfig();
 
-  Serial.write("set pinMode\n");
+	Serial.write("set pinMode\n");
 
 	// Configure IO pins
-//	pinMode(8, INPUT_PULLUP);
-//	pinMode(9, INPUT_PULLUP);
-//	pinMode(10, INPUT_PULLUP);
-//	pinMode(11, INPUT_PULLUP);
-//	pinMode(12, INPUT_PULLUP);
-//	pinMode(13, INPUT_PULLUP);
 	pinMode(RPM_IN, INPUT_PULLUP);
 	pinMode(SPEED_IN, INPUT_PULLUP);
-  pinMode(AIRFLOW_IN, INPUT);
+	pinMode(AIRFLOW_IN, INPUT);
 	pinMode(SOLENOID_OUT, OUTPUT);
-  pinMode(DEBUG_OUT, OUTPUT);
+	pinMode(DEBUG_OUT, OUTPUT);
 
-  // Debug pin
-  pinMode(SPEED_OUT, OUTPUT);
-  pinMode(RPM_OUT, OUTPUT);
+	// Debug pin
+	pinMode(SPEED_OUT, OUTPUT);
+	pinMode(RPM_OUT, OUTPUT);
 
 	// Configure analog input
 	//TODO
 
-  Serial.write("pci setup\n");
+	Serial.write("pci setup\n");
 
 	// activate pin change interrupt
 	pciSetup(RPM_IN);
 	pciSetup(SPEED_IN);
-  pciSetup(AIRFLOW_IN);
+	pciSetup(AIRFLOW_IN);
 }
 
 // PID state variables
@@ -685,20 +680,18 @@ void evalCycle()
 	cli();
 	uint32_t RPMPeriod = gRPMPeriod;
 	uint32_t SPEEDPeriod = gSPEEDPeriod;
-  uint32_t airFlowPeriod = gAirFlowPeriod;
-  uint32_t lastRPMDate = gLastRPMDate;
-  uint32_t lastSPEEDDate = gLastSPEEDDate;
-  uint32_t lastAirFlowDate = gLastAirFlowDate;
+	uint32_t airFlowPeriod = gAirFlowPeriod;
+	uint32_t lastRPMDate = gLastRPMDate;
+	uint32_t lastSPEEDDate = gLastSPEEDDate;
+	uint32_t lastAirFlowDate = gLastAirFlowDate;
 	SREG = oldSREG;
 
-  uint32_t now = micros();
+	uint32_t now = micros();
   
 	// Analog read : very costly when done without interrupt : 100µs per read !
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric presure)...
-//	if (true)
-//	{
-		gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
-//	}
+	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
+
 #if 0
 	else
 	{
@@ -725,7 +718,7 @@ void evalCycle()
 	} 
 #endif
 
-  // Throttle analog read. 0..100% => 0..5V
+	// Throttle analog read. 0..100% => 0..5V
 	gMeasures.THROTTLE = analogRead(THROTTLE_IN) * (100.0f / 1023.f);
 	gThrottleDerivFilter[gThrottleDerivFilterIndex] = (gMeasures.THROTTLE - gLastThrottle) / (LOOP_PERIOD * 0.001f);
 	gThrottleDerivFilterIndex += 1;
@@ -737,53 +730,53 @@ void evalCycle()
 	}
 	gLastThrottle = gMeasures.THROTTLE;
 
-  // Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200.000µs
-  if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
-  {
-    // 0 stand for 0 RPM
-    RPMPeriod = 0;
-  }
-  // Detect 0 Speed : last pulse > 1km/h period : 1Kmh/0.73 = 1.36s=1.360.000µs
-  if (SPEEDPeriod > 0 and (now - lastSPEEDDate) > 1360000)
-  {
-    // 0 stand for 0 speed
-    SPEEDPeriod = 0;
-  }
-  // Detect 0 Airflow: last pulse > 10Hz period (0.1s): 100.000µs
-  if (airFlowPeriod > 0 and (now - lastAirFlowDate) > 100000)
-  {
-    // 0 stand for 0 speed
-    airFlowPeriod = 0;
-  }
+	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200.000µs
+	if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
+	{
+		// 0 stand for 0 RPM
+		RPMPeriod = 0;
+	}
+	// Detect 0 Speed : last pulse > 1km/h period : 1Kmh/0.73 = 1.36s=1.360.000µs
+	if (SPEEDPeriod > 0 and (now - lastSPEEDDate) > 1360000)
+	{
+		// 0 stand for 0 speed
+		SPEEDPeriod = 0;
+	}
+	// Detect 0 Airflow: last pulse > 10Hz period (0.1s): 100.000µs
+	if (airFlowPeriod > 0 and (now - lastAirFlowDate) > 100000)
+	{
+		// 0 stand for 0 speed
+		airFlowPeriod = 0;
+	}
 
 	// Convert µs period into Hz
 	// RPM need an additional ratio of 3 to account for the number of cylinder fired each revolution.
-  if (RPMPeriod > 0)
-  {
-	  gMeasures.RPM = 60.0f * 1000000.0f / (RPMPeriod * 3.0f);
-  }
-  else
-  {
-    gMeasures.RPM = 0.0f;
-  }
-  if (SPEEDPeriod > 0)
-  {
-	  gMeasures.SPEED = 1000000.0f / (SPEEDPeriod * gConfig.speedFactor);
-  }
-  else
-  {
-    gMeasures.SPEED = 0.0;
-  }
-  if (airFlowPeriod > 0)
-  {
-    gMeasures.AIR_FLOW = 1000000.0f / (airFlowPeriod);
-  }
-  else
-  {
-    gMeasures.AIR_FLOW = 0.0;
-  }
+	if (RPMPeriod > 0)
+	{
+		gMeasures.RPM = 60.0f * 1000000.0f / (RPMPeriod * 3.0f);
+	}
+	else
+	{
+		gMeasures.RPM = 0.0f;
+	}
+	if (SPEEDPeriod > 0)
+	{
+		gMeasures.SPEED = 1000000.0f / (SPEEDPeriod * gConfig.speedFactor);
+	}
+	else
+	{
+		gMeasures.SPEED = 0.0;
+	}
+	if (airFlowPeriod > 0)
+	{
+		gMeasures.AIR_FLOW = 1000000.0f / (airFlowPeriod);
+	}
+	else
+	{
+		gMeasures.AIR_FLOW = 0.0;
+	}
   
-	computeGear();
+  	computeGear();
 	
 	// Compute engine load
 	// We don't have MAF or VE info, so the load is a simple aproximation based on MAP :
@@ -803,59 +796,58 @@ void evalCycle()
 				* (gConfig.boostReference);
 	}
 
-  // Apply throttle correction
-  {
-    // throttle position correction
-    float throttleIndex = gMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
-    throttleIndex = constrain(throttleIndex, 0, sizeof(gConfig.throttleBoostTable)-1);
+	// Apply throttle correction
+	{
+	// throttle position correction
+		float throttleIndex = gMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
+		throttleIndex = constrain(throttleIndex, 0, sizeof(gConfig.throttleBoostTable)-1);
 
-    gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
+		gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
 
-    // Throttle pos variation correction
-    float throttleDerivIndex = 3 + gMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
-    throttleDerivIndex = constrain(throttleDerivIndex, 0, sizeof(gConfig.throttleDerivBoostTable)-1);
+		// Throttle pos variation correction
+		float throttleDerivIndex = 3 + gMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
+		throttleDerivIndex = constrain(throttleDerivIndex, 0, sizeof(gConfig.throttleDerivBoostTable)-1);
 
-    gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
-//    gMeasures.TARGET_BOOST = interp(gConfig.throttleDerivBoostTable, throttleDerivIndex);
-//    gMeasures.TARGET_BOOST = throttleDerivIndex;
+		gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
+		//    gMeasures.TARGET_BOOST = interp(gConfig.throttleDerivBoostTable, throttleDerivIndex);
+		//    gMeasures.TARGET_BOOST = throttleDerivIndex;
 
-    // Convert boost value into MAP value, just add the atmo pressure ;)
-    gMeasures.TARGET_BOOST += 1.0f;
-  }
+		// Convert boost value into MAP value, just add the atmo pressure ;)
+		gMeasures.TARGET_BOOST += 1.0f;
+	}
 
-  gMeasures.TARGET_BOOST = targetLowpassFilter.input(gMeasures.TARGET_BOOST);
+	gMeasures.TARGET_BOOST = targetLowpassFilter.input(gMeasures.TARGET_BOOST);
 	
 	// 2nd, apply PID filter to compute boost error
 	float error = gMeasures.TARGET_BOOST - (gMeasures.MAP);
 	float P = error * gConfig.pidParam[0];
-  // Integral windup check
-  if (gMeasures.RPM > 2000 && fabs(error) < 0.4f)
-  {
-  	gErrorInteg += error * gConfig.pidParam[1] * (LOOP_PERIOD * 0.001f);
-    gErrorInteg = constrain(gErrorInteg, -0.3f, 0.3f);
-  }
-  else
-  {
-    // too much error, windup integral
-    gErrorInteg = 0.0f;
-  }
-//	gErrorDeriv += ((gMeasures.MAP - gLastMAP) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
-  gErrorDeriv = ((error - gLastError) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
-  gErrorDeriv = lowpassFilter.input(gErrorDeriv);
-  gErrorDeriv = constrain(gErrorDeriv, -0.5f, 0.5f);
+	// Integral windup check
+	if (gMeasures.RPM > 2000 && fabs(error) < 0.4f)
+	{
+		gErrorInteg += error * gConfig.pidParam[1] * (LOOP_PERIOD * 0.001f);
+		gErrorInteg = constrain(gErrorInteg, -0.3f, 0.3f);
+	}
+	else
+	{
+		// too much error, windup integral
+		gErrorInteg = 0.0f;
+	}
+	gErrorDeriv = ((error - gLastError) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
+	gErrorDeriv = lowpassFilter.input(gErrorDeriv);
+	gErrorDeriv = constrain(gErrorDeriv, -0.5f, 0.5f);
 	gLastMAP = gMeasures.MAP;
-  gLastError = error;
+	gLastError = error;
 	
 	gMeasures.TARGET_OUTPUT = P + gErrorInteg + gErrorDeriv;
-  gMeasures.TARGET_OUTPUT = constrain(gMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
+	gMeasures.TARGET_OUTPUT = constrain(gMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
 	
 	// Convert target output to soneloid DC
 	// We need a convertion constant to map a boost value to a solenoid DC
 	// target output is in absolut pressure, convert if to relative pressure.
-  // DC is updated only once per sol cycle
-  static uint8_t  cycleIndex = 0;
+	// DC is updated only once per sol cycle
+	static uint8_t  cycleIndex = 0;
 //  static uint8_t  testIndex = 0;
-  if (cycleIndex == 0)
+	if (cycleIndex == 0)
 	{
 		float relativeTarget = gMeasures.TARGET_OUTPUT;
 		float rawIndex = constrain(relativeTarget / 1.25f * 5.0f, 0.0f, 5.0f);
@@ -866,33 +858,33 @@ void evalCycle()
 //    	uint8_t r2 = constrain(r1 + 1, 0, 5);
 //		uint8_t c1 = (int)floor(columnIndex);
 
-    float ic[2];
-    ic[0]= interp(gConfig.dutyCycleTable[r1], columnIndex);
-    ic[1] = interp(gConfig.dutyCycleTable[r1+1], columnIndex);
+		float ic[2];
+		ic[0] = interp(gConfig.dutyCycleTable[r1], columnIndex);
+		ic[1] = interp(gConfig.dutyCycleTable[r1+1], columnIndex);
 
-    // and finaly compute the solenoid DC! 
-    float dc = interpf(ic, rawIndex - r1);
-    gMeasures.SOL_DC = dc;
+		// and finaly compute the solenoid DC! 
+		float dc = interpf(ic, rawIndex - r1);
+		gMeasures.SOL_DC = dc;
 
-//  gMeasures.SOL_DC = testIndex * 20;
-//  testIndex += 1;
-//  if (testIndex > 5)
-//    testIndex = 0;
+//  	gMeasures.SOL_DC = testIndex * 20;
+//  	testIndex += 1;
+//  	if (testIndex > 5)
+//    		testIndex = 0;
 	}
 
-  // Take simulation into account
-  float effectiveSolDc = gMeasures.SOL_DC;
-  if (gSimulation.FORCE_WG != 0)
-  {
-    effectiveSolDc = gSimulation.FORCE_WG;
-  }
+	// Take simulation into account
+	float effectiveSolDc = gMeasures.SOL_DC;
+	if (gSimulation.FORCE_WG != 0)
+	{
+		effectiveSolDc = gSimulation.FORCE_WG;
+	}
   
-  // produce output value
-  // --------------------
-  // This first version use a simple software approch to implement the PWM: 
-  // Based on a 20Hz cycle, the PWD is managed by the main loop running @100Hz.
-  // This leaves 5 loops per cycle, leading to 6 PWM levels :
-  //  0, 20, 40, 60, 80, 100%
+	// produce output value
+	// --------------------
+	// This first version use a simple software approch to implement the PWM: 
+	// Based on a 20Hz cycle, the PWD is managed by the main loop running @100Hz.
+	// This leaves 5 loops per cycle, leading to 6 PWM levels :
+	//  0, 20, 40, 60, 80, 100%
 	if ((effectiveSolDc + 40) / 20.0f > cycleIndex+2)
 	{
 		// switch solenoid on
@@ -906,13 +898,13 @@ void evalCycle()
 	
 	cycleIndex++;
 	if (cycleIndex >= 5)
-  {
+	{
 		cycleIndex = 0;
-  }
+	}
 }
 
 // Fast comm protocol.
-// Base on 1 or 2 bytes data only.
+// Based on 1 or 2 bytes data only.
 class FastComm
 {
 private:
@@ -940,95 +932,101 @@ private:
 
 	uint8_t& getByteParam(uint16_t addr)
 	{
-		if (addr == 0x0003)
+		static uint8_t placeHolder;
+		if (addr == 0x003)
 		{
 			return gMeasures.GEAR;
 		}
-		else if (addr >= 0x0008 and addr < 0x0008 + 24)
+		else if (addr >= 0x008 and addr < 0x008 + 6*4)
 		{
 			// Boost x Load to WGDC 
-			return ((uint8_t*)gConfig.dutyCycleTable)[addr - 0x0008];
+			return ((uint8_t*)gConfig.dutyCycleTable)[addr - 0x008];
 		}
-		else if (addr >= 0x0020 and addr < 0x0020 + 42)
+		else if (addr >= 0x020 and addr < 0x020 + 6*7)
 		{
 			// Gear x RPM boost correction table
-			return gConfig.boostTable[0][addr - 0x0020];
+			return ((uint8_t*)gConfig.boostTable)[addr - 0x020];
 		}
-		else if (addr >= 0x004a and addr < 0x004a + 6)
+		else if (addr >= 0x04a and addr < 0x04a + 6)
 		{
 			// Throttle boost correction table
-			return ((uint8_t*)gConfig.throttleBoostTable)[addr - 0x004a];
+			return ((uint8_t*)gConfig.throttleBoostTable)[addr - 0x04a];
 		}
-		else if (addr >= 0x0050 and addr < 0x0050 + 7)
+		else if (addr >= 0x050 and addr < 0x050 + 7)
 		{
 			// Throttle deriv boost correction table
-			return ((uint8_t*)gConfig.throttleDerivBoostTable)[addr - 0x0050];
+			return ((uint8_t*)gConfig.throttleDerivBoostTable)[addr - 0x050];
 		}
-		else if (addr == 0x0057)
+		else if (addr == 0x057)
 		{
 			return gSimulation.FORCE_WG;
 		}
-		else if (addr == 0x0058)
+		else if (addr == 0x058)
 		{
 			return gInfo.versionMajor;
 		}
-		else if (addr == 0x0059)
+		else if (addr == 0x059)
 		{
 			return gInfo.versionMinor;
 		}
+
+		return placeHolder;
 	}
 
 	float& getFloatParam(uint16_t addr)
 	{
+		static float placeHolder;
  		switch(addr)
 		{
-		case 0x0000:
+		case 0x000:
 			return gMeasures.MAP;
-		case 0x0001:
+		case 0x001:
 			return gMeasures.THROTTLE;
-		case 0x0002:
+		case 0x002:
 			return gMeasures.SOL_DC;
-		case 0x0004:
+		case 0x004:
 			return gMeasures.LOAD;
-		case 0x0005:
+		case 0x005:
 			return gMeasures.CHIP_LOAD;
-		case 0x0006:
+		case 0x006:
 			return gMeasures.TARGET_BOOST;
-		case 0x0007:
+		case 0x007:
 			return gMeasures.TARGET_OUTPUT;
-		case 0x0800:
+		case 0x800:
 			return gConfig.tyreCircum;
-		case 0x0801:
+		case 0x801:
 			return gConfig.gearRatios[0];
-		case 0x0802:
+		case 0x802:
 			return gConfig.gearRatios[1];
-		case 0x0803:
+		case 0x803:
 			return gConfig.gearRatios[2];
-		case 0x0804:
+		case 0x804:
 			return gConfig.gearRatios[3];
-		case 0x0805:
+		case 0x805:
 			return gConfig.gearRatios[4];
-		case 0x0806:
+		case 0x806:
 			return gConfig.gearRatios[5];
-		case 0x0807:
+		case 0x807:
 			return gConfig.speedFactor;
-		case 0x0808:
+		case 0x808:
 			return gConfig.boostReference;
-		case 0x0809:
+		case 0x809:
 			return gConfig.pidParam[0];
-		case 0x080a:
+		case 0x80a:
 			return gConfig.pidParam[1];
-		case 0x080b:
+		case 0x80b:
 			return gConfig.pidParam[2];
-		case 0x080c:
+		case 0x80c:
 			return gMeasures.RPM;
-		case 0x080d:
+		case 0x80d:
 			return gMeasures.SPEED;
-		case 0x080e:
+		case 0x80e:
 			return gMeasures.THROTTLE_DERIV;
-		case 0x080f:
+		case 0x80f:
 			return gMeasures.AIR_FLOW;
 		}
+
+		return placeHolder;
 	}
 
 	struct Accessor
@@ -1038,6 +1036,29 @@ private:
 		float mFactor;
 		bool mSigned;
 	};
+
+#define BYTE_TABLE_PARAM_LINE4(addr) \
+	{false, addr+0, 1.0f, false}, \
+	{false, addr+1, 1.0f, false}, \
+	{false, addr+2, 1.0f, false}, \
+	{false, addr+3, 1.0f, false}, 
+
+#define BYTE_TABLE_PARAM_LINE6(addr) \
+	{false, addr+0, 1.0f, false}, \
+	{false, addr+1, 1.0f, false}, \
+	{false, addr+2, 1.0f, false}, \
+	{false, addr+3, 1.0f, false}, \
+	{false, addr+4, 1.0f, false}, \
+	{false, addr+5, 1.0f, false},
+
+#define BYTE_TABLE_PARAM_LINE7(addr) \
+	{false, addr+0, 1.0f, false}, \
+	{false, addr+1, 1.0f, false}, \
+	{false, addr+2, 1.0f, false}, \
+	{false, addr+3, 1.0f, false}, \
+	{false, addr+4, 1.0f, false}, \
+	{false, addr+5, 1.0f, false}, \
+	{false, addr+6, 1.0f, false},
 
 	static const constexpr Accessor mByteAccessors[] =
 	{
@@ -1050,30 +1071,31 @@ private:
 		{true,  0x006, 50.0f, false},	// Target boost
 		{true,  0x007, 50.0f, false},	// Target output
 
-		{false,  0x008, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x009, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00a, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00b, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00c, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00d, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00e, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x00f, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x010, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x011, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x012, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x013, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x014, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x015, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x016, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x017, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x018, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x019, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01a, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01b, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01c, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01d, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01e, 1.0f, false},	// Boost x load to WGDC
-		{false,  0x01f, 1.0f, false},	// Boost x load to WGDC
+		// Sol DC table : boost x load (6x4)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*0)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*1)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*2)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*3)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*4)
+		BYTE_TABLE_PARAM_LINE4(0x008+4*5)
+
+		// Boost cor table : Gear x RPM (6x7)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*0)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*1)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*2)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*3)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*4)
+		BYTE_TABLE_PARAM_LINE7(0x020+7*5)
+
+		// Boost correction table : throttle 
+		BYTE_TABLE_PARAM_LINE6(0x04a)
+		// Boost correction table : throttle deriv 
+		BYTE_TABLE_PARAM_LINE7(0x050)
+
+		{false,  0x057, 1.0f, false},	// Test WG
+		{false,  0x058, 1.0f, false},	// Version major
+		{false,  0x059, 1.0f, false},	// Version minor
+
 	};
 
 	static const constexpr Accessor mWordAccessors[] =
@@ -1107,22 +1129,22 @@ private:
 		{
 			if (accessor.mSigned)
 			{
-				return static_cast<uint8_t>(constrain(getFloatParam(accessor.mAddr) * accessor.mFactor, -128, 127));
+				return uint8_t(constrain(getFloatParam(accessor.mAddr) * accessor.mFactor, -128, 127));
 			}
 			else
 			{
-				return static_cast<uint8_t>(constrain(getFloatParam(accessor.mAddr) * accessor.mFactor, 0, 255));
+				return uint8_t(constrain(getFloatParam(accessor.mAddr) * accessor.mFactor, 0, 255));
 			}
 		}
 		else
 		{
 			if (accessor.mSigned)
 			{
-				return static_cast<uint8_t>(constrain(int8_t(getByteParam(accessor.mAddr)) * accessor.mFactor, -128, 127));
+				return uint8_t(constrain(int8_t(getByteParam(accessor.mAddr)) * accessor.mFactor, -128, 127));
 			}
 			else
 			{
-				return static_cast<uint8_t>(constrain(getByteParam(accessor.mAddr) * accessor.mFactor, 0, 255));
+				return uint8_t(constrain(getByteParam(accessor.mAddr) * accessor.mFactor, 0, 255));
 			}
 			
 		}
@@ -1268,7 +1290,7 @@ private:
 
 	void processSending()
 	{
-		if (Serial.availableForWrite() > 0)
+		while (Serial.availableForWrite() > 0 && mTxCounter < mTxSize)
 		{
 			Serial.write(mBuffer[mTxCounter++]);
 		}
@@ -1295,276 +1317,10 @@ public:
 	}
 };
 
-class CommManager
-{
-	enum State
-	{
-		SYNCING,
-		WAIT_CMD,
-		WAIT_END,
-	};
-	
-	State	mState = SYNCING;
-	
-	int		mRxCounter = 0;
-	uint8_t	 mBuffer[10];
-	uint32_t mLastRx = 0;
-	int		mWaitRx = 0;
+const constexpr FastComm::Accessor FastComm::mByteAccessors[];
+const constexpr FastComm::Accessor FastComm::mWordAccessors[];
 
-	const int mMsgSize[4] = {5, 5+1, 5, 5+4};
-	
-
-	void reset()
-	{
-		mRxCounter = 0;
-		mState = SYNCING;
-	}
-	
-	uint8_t* getByteRef(uint16_t addr)
-	{
-		if (addr >= 0x0030 and addr < 0x0048)
-		{
-			return &((uint8_t*)gConfig.dutyCycleTable)[addr - 0x0030];
-		}
-		else if (addr >= 0x100 and addr < 0x100+7)
-		{
-//			return &((uint8_t*)gConfig.boostTable[0])[addr - 0x0100];
-			return &gConfig.boostTable[0][addr - 0x0100];
-		}
-		else if (addr >= 0x110 and addr < 0x110+7)
-		{
-			return &((uint8_t*)gConfig.boostTable[1])[addr - 0x0110];
-		}
-		else if (addr >= 0x120 and addr < 0x120+7)
-		{
-			return &((uint8_t*)gConfig.boostTable[2])[addr - 0x0120];
-		}
-		else if (addr >= 0x130 and addr < 0x130+7)
-		{
-			return &((uint8_t*)gConfig.boostTable[3])[addr - 0x0130];
-		}
-		else if (addr >= 0x140 and addr < 0x140+7)
-		{
-			return &((uint8_t*)gConfig.boostTable[4])[addr - 0x0140];
-		}
-		else if (addr >= 0x150 and addr < 0x150+7)
-		{
-			return &((uint8_t*)gConfig.boostTable[5])[addr - 0x0150];
-		}
-		else if (addr >= 0x160 and addr < 0x160+6)
-		{
-			return &((uint8_t*)gConfig.throttleBoostTable)[addr - 0x0160];
-		}
-		else if (addr >= 0x170 and addr < 0x170+7)
-		{
-			return &((uint8_t*)gConfig.throttleDerivBoostTable)[addr - 0x0170];
-		}
- 
-		switch(addr)
-		{
-		case 0x0025:
-			return &gMeasures.GEAR;
-	  case 0x200:
-      return &gSimulation.FORCE_WG;
-   	case 0x1000:
-			return &gInfo.versionMajor;
-		case 0x1001:
-			return &gInfo.versionMinor;
-		}
-
-		return nullptr;
-	}
-	
-	float* getFloatRef(uint16_t addr)
-	{
-		switch (addr)
-		{
-		case 0x0000:
-			return &gConfig.tyreCircum;
-
-		case 0x0001:
-			return &gConfig.gearRatios[0];
-		case 0x0002:
-			return &gConfig.gearRatios[1];
-		case 0x0003:
-			return &gConfig.gearRatios[2];
-		case 0x0004:
-			return &gConfig.gearRatios[3];
-		case 0x0005:
-			return &gConfig.gearRatios[4];
-		case 0x0006:
-			return &gConfig.gearRatios[5];
-		case 0x0007:
-			return &gConfig.speedFactor;
-		case 0x0008:
-			return &gConfig.boostReference;
-		case 0x0010:
-			return &gConfig.pidParam[0];
-		case 0x0011:
-			return &gConfig.pidParam[1];
-		case 0x0012:
-			return &gConfig.pidParam[2];
-		
-		case 0x0020:
-			return &gMeasures.RPM;
-		case 0x0021:
-			return &gMeasures.SPEED;
-		case 0x0022:
-			return &gMeasures.MAP;
-		case 0x0023:
-			return &gMeasures.THROTTLE;
-		case 0x0024:
-			return &gMeasures.SOL_DC;
-		case 0x0026:
-			return &gMeasures.LOAD;
-    case 0x0027:
-      return &gMeasures.CHIP_LOAD;
-    case 0x0028:
-      return &gMeasures.TARGET_BOOST;
-    case 0x0029:
-      return &gMeasures.TARGET_OUTPUT;
-    case 0x002a:
-      return &gMeasures.THROTTLE_DERIV;
-    case 0x002b:
-      return &gMeasures.AIR_FLOW;
-}
-
-    static float failed = NAN;
-		return &failed;
-	}
-	
-	void processCommand()
-	{
-		uint16_t addr = uint16_t(mBuffer[3]) * 0x100 + mBuffer[2];
-		uint8_t* pi;
-		float*	pf;
-		
-//		uint8_t respBuffer[10];
-		
-		switch (mBuffer[1])
-		{
-		case 0:
-			// read byte
-			pi = getByteRef(addr);
-			// write response to serial
-      if (pi != NULL)
-      {
-  			mBuffer[1] = 1;
-  			mBuffer[4] = *pi;
-  			mBuffer[5] = 0x04;
-  			Serial.write(mBuffer, 6);
-      }
-      else
-      {
-        mBuffer[1] = 4;
-        mBuffer[4] = 0x04;
-        Serial.write(mBuffer, 5);
-      }
-			break;
-		case 1:
-			// write byte
-			pi = getByteRef(addr);
-			*pi = mBuffer[4];
-			// write response to serial : send a read var
-			mBuffer[1] = 0;
-			mBuffer[4] = 0x04;
-			Serial.write(mBuffer, 5);
-			
-			// Mark config for saving
-			gConfChanged = true;
-			break;
-		case 2:
-			// read float
-			pf = getFloatRef(addr);
-			// write response to serial
-			mBuffer[1] = 3;
-			*reinterpret_cast<float*>(&mBuffer[4]) = *pf;
-			mBuffer[8] = 0x04;
-			Serial.write(mBuffer, 9);
-			break;
-		case 3:
-			// write float
-			pf = getFloatRef(addr);
-			*pf = *(float*)&mBuffer[4];
-			// write response to serial : send a read var
-			mBuffer[1] = 2;
-			mBuffer[4] = 0x04;
-			Serial.write(mBuffer, 5);
-			
-			// Mark config for saving
-			gConfChanged = true;
-			break;
-		}
-	}
-	
-public:
-	void manageSerial()
-	{
-		uint32_t now = millis();
-		if (now - mLastRx > 1000)
-		{
-			// timeout !
-			reset();
-		}
-		// manage serial line commands
-		while (Serial.available() > 0)
-		{
-			if (mRxCounter == sizeof(mBuffer))
-			{
-				// buffer overflow !
-				reset();
-			}
-			mBuffer[mRxCounter++] = Serial.read();
-			mLastRx = now;
-			
-			switch (mState)
-			{
-			case SYNCING:
-				if (mBuffer[0] == 0x01)
-				{
-					// Start of message
-					mState = WAIT_CMD;
-				}
-				else
-				{
-					// not a valid start
-					reset();
-				}
-				break;
-			case WAIT_CMD:
-				if (mBuffer[1] > sizeof(mMsgSize))
-				{
-					// invalid command! 
-					reset();
-				}
-				else
-				{
-					mWaitRx = mMsgSize[mBuffer[1]];
-					mState = WAIT_END;
-				}
-				break;
-			case WAIT_END:
-				if (mRxCounter == mWaitRx)
-				{
-					// check end marker
-					if (mBuffer[mRxCounter-1] != 0x04)
-					{
-						// missing end marker !
-						reset();
-					}
-					else
-					{
-						// message is complete, process it
-						processCommand();
-            reset();
-					}
-				}
-				break;
-			}
-		}		
-	}
-};
-CommManager gCommManager;
+FastComm gFastCom;
 
 uint32_t gLastSaveCheck = 0;
 
@@ -1576,25 +1332,25 @@ void loop()
 	if (now - gLastEvalCycle > LOOP_PERIOD * 1000)
 	{
 		evalCycle();
-		gLastEvalCycle = now;
+	 	gLastEvalCycle = now;
 		
-		uint32_t after = micros();
+	 	uint32_t after = micros();
 		
-		// compute CPU load
-		gMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
+	 	// compute CPU load
+	 	gMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
 	}
 	
 	if (now - gLastSaveCheck > 1000000)
 	{
-		// every second, look for saving the conf
-		if (gConfChanged)
-		{
-			saveConfig();
-			gConfChanged = false;
-		}
-    gLastSaveCheck = now;
+	 	// every second, look for saving the conf
+	 	if (gConfChanged)
+	 	{
+	 		saveConfig();
+	 		gConfChanged = false;
+	 	}
+ 	    gLastSaveCheck = now;
 	}
-	
+
 	// manage serial interface
-	gCommManager.manageSerial();
+	gFastCom.manageSerial();
 }

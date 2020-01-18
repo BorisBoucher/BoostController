@@ -4,3 +4,4 @@ snxcomm.pro.user*
 snxcomm/Makefile*
 */.qmake.stash
 Archive_and_unused/
+*.pyc
