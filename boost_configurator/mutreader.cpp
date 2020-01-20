@@ -27,7 +27,10 @@ MutReader::~MutReader()
 
 bool MutReader::open(const QString& portName)
 {
-	close();
+	if (mSerialPort != nullptr)
+	{
+		return true;
+	}
 	mSerialPort = new QSerialPort();
 	mSerialPort->setPortName(portName);
 
@@ -63,6 +66,7 @@ void MutReader::close()
 		mExitThread = true;
 		mThread.join();
 		mSerialPort->close();
+		delete mSerialPort;
 		mSerialPort = nullptr;
 	}
 }
@@ -86,6 +90,8 @@ void MutReader::run()
 {
 	auto readParam = [this](int paramId) -> uint8_t
 	{
+		// clear buffer
+		this->mSerialPort->clear();
 		char buffer[2];
 		buffer[0] = static_cast<char>(paramId);
 		this->mSerialPort->write(buffer, 1);
