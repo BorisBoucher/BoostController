@@ -42,15 +42,14 @@
 	5 - MAP input (5V analog)
 	6 - Throttle input (5V analog)
 	7 - Solenoid output (low side switching)
-  8 - 
-	
+	8 - Air flow HZ (for high range air flow measuremen)
   
   General structure:
   =================
   
   Data Acquisition:
   ----------------
-  As we need to sample for 2 frequency values, we make use of pin change interrupt to
+  As we need to sample for 3 frequency values, we make use of pin change interrupt to
   trigger an interrupt when either RPM or speed signal.
 
   For RPM, the signal is composed of tree 5V pulse per revolution:
@@ -62,8 +61,10 @@
   Speed input is a square signal ranging from 0 to 220Hz (@300km/h).
   This lead to an interrupt frequency of 440Hz.
   
-  The combined worst case interrupt load is therefore 1240Hz, which seams pretty easy to
-  sustain with the arduino running @16Mhz.
+  Air flow HZ input is a square signal ranging from 0 to 2800+Hz.
+  This lead to an interrupt frequency of 5600Hz.
+  
+  The combined worst case interrupt load is therefore 6840Hz, which leave 2330 cycle per interrupt.
 
   MAP is captured on an analog input. A little filtering may be needed to denoise the signal.
   
@@ -172,13 +173,16 @@
   For any value in between, interpolation is done to obtain the final duty cycle to apply on the 
   waste gate selenoide.
 
-  Configuation & logging protocol (I2C)
-  -------------------------------------
-  BC is I2C slave, it support read or write command.
+  Automatic throttle position calibration
+  ---------------------------------------
+  In order to account for throttle position measurement not being @100%, an automatic calibration procedure
+  is provided :
+    
+	* With RPM @0, if the throttle measurement is greater then 80% and steady during 3s, the throttle value
+	will be considered as the maximum throttle position (i.e. 100% scale).
+	* The BC confirm the new calibration by producing 3 pulses of 1/4s @50% DC on the BC sol.
 
-  Read :
-  [I2C ADDR] [
-  
+
   Configuration & logging protocol (serial)
   -----------------------------------------
   Conf&Log protocol allow to read acquisition data or internal states and read or write the parameter tables.
@@ -197,63 +201,62 @@
   
   Address table
   -------------
-	Addr		Type	Default	Comment
-	0x0000		float	 2.02	Tyre circumference 
-	0x0001		float	12.200	1st gear ratio
-	0x0002		float	 6.908	2nd gear ratio
-	0x0003		float	 4.383	3rd gear ratio
-	0x0004		float	 3.271	4th gear ratio
-	0x0005		float	 2.620	5th gear ratio
-	0x0006		float	 1.000	6th gear ratio
-	0x0007		float	 0.73	Hz/km/h, speed sensor conversion factor
-	0x0008		float	 0.7	Reference boost for bost table (bar)
+0x000 - 0x1ff	2048 single byte memory zone
+
+	Addr	Format		Factor	Desc
+	0x000	u8			50		MAP, bar, 0..5,12
+	0x001	u8			1		Throttle pos, %, 0..100
+	0x002	u8			1		Solenoid duty cycle, %, 0..100
+	0x003	u8			1		Gear, 0..6 (0 unknown)
+	0x004	u8			1		Engine load, %, 0..256
+	0x005	u8			1		CPU load, %, 0..100
+	0x006	u8			50		Target boost, bar, 0..5,12
+	0x007	u8			50		Target output, bar, 0..5,12
+								
+	0x008	u8[6][4]	1		Boost x Load to Sol DC, %, 0..100, 24 items
+	0x020	u8[6][7]	1		Gear x RPM boost correction table, %, 0..200, 42 items
+	0x04A	u8[6]		1		Throttle adjust table, %, 0..200
+	0x050	u8[7]		1		Throttle deriv adjust table, %, 0..200
+								
+	0x057	u8			1		Solenoid duty cycle test command, 0..100 (0 : test off)
+	0x058	u8			1		Firmware major version
+	0x059	u8			1		Firmware minor version
 	
-	0x0010		float	 0.5	PID P parameter
-	0x0011		float	 0.05	PID I parameter
-	0x0012		float	 0.005	PID D parameter
-	
-	0x0020		float	 x		Current RPM
-	0x0021		float	 x		Current SPEED (km/h)
-	0x0022		float	 x		Current MAP (bar) 
-	0x0023		float	 x		Current throotle position (%)
-	0x0024		float	 x		Current solenoid DC (%)
-	0x0025		byte	 x		Current gear
-	0x0026		float	 x		Current engine load (%)
-	0x0027		float  x    CPU load (%)
-	0x0028		float  x    Target Boost (bar)
-	0x0029		float  x    Target output (bar)
-	0x002a		float  x    Throttle pos deriv (%/s)
-	0x002b		float  x    Air flow (Hz)
+	0x05a	u8			1		Throttle Max calibration to allow 100% scale even if sensor report only 95%. 0..100 
 
-	0x0030		byte[5][4] x	Boost vs load table used to convert the target boost into solenoid duty cycle
-	0x0044
- 	
-	0x0100		byte[7] 1st gear boost table
-	0x0110		byte[7] 2nd gear boost table
-	0x0120		byte[7] 3rd gear boost table
-	0x0130		byte[7] 4th gear boost table
-	0x0140		byte[7] 5th gear boost table
-	0x0150		byte[7] 6th gear boost table
+0x200 - 0x3ff	2048 16 bits words
 
-	0x160		byte[6] Throttle boost adj
-	0x170		byte[7] Throttle' boost adj
+	Addr	Format	Factor	Desc
+	0x800	u16		1000	Tire circumference, m, 0..65,535m
+	0x801	u16		1000	1st gear ratio, 0.001, 0..65,535
+	0x802	u16		1000	2nd gear ratio, 0.001, 0..65,535
+	0x803	u16		1000	3rd gear ratio, 0.001, 0..65,535
+	0x804	u16		1000	4th gear ratio, 0.001, 0..65,535
+	0x805	u16		1000	5th gear ratio, 0.001, 0..65,535
+	0x806	u16		1000	6th gear ratio, 0.001, 0..65,535
+	0x807	u16		1000	Speed conversion factor, hz/km/h, 0.001, 0..65,535
+	0x808	u16		1000	Reference boost, bar, 0.001, 0..65,535
 
-  # Testing command
-  0x200   byte    Force waste gate output ratio (0..100)
+	0x809	u16		1000	PID P factor, 0.001, 0..65,535
+	0x80a	u16		1000	PID I factor, 0.001, 0..65,535
+	0x80b	u16		1000	PID D factor, 0.001, 0..65,535
 
-	0x1000		byte		x	Firmware version, major
-	0x1001		byte		x	Firmware version, minor
+	0x80c	u16		1		RPM, 1, 0..65535
+	0x80d	u16		1		SPEED, km/h, 0..65535
+	0x80e	s16		1		Throttle pos deriv, %/s, -32768..32767
+	0x80f	u16		1		Air flow, Hz, 0..65535
 	
   Pin mapping
   -----------
   
 	RPM input		  :	PIN 12, Port B4
-	Speed input		:	PIN 11, Port B3
-	Throttle input:	PIN A7, ADC7
+	Speed input		  :	PIN 11, Port B3
+	MAF Hz			  : PIN 10, Port B2
+	Throttle input    :	PIN A7, ADC7
 	MAP input	 	  :	PIN A6, ADC6
 	
 	Solenoid output	:	PIN 13, PB5
-  Debug RPM replay: PIN 10, PB2
+    Debug RPM replay:   PIN 10, PB2
 	Serial TX		:	PIN 1, PD1
 	Serial RX		:	PIN 0, PD0
 	
@@ -274,9 +277,12 @@
 #include <EEPROM.h>
 
 
-FilterOnePole pistonFilter( LOWPASS, 5.0f ); 
 FilterOnePole lowpassFilter( LOWPASS, 10.0f ); 
-FilterOnePole targetLowpassFilter( LOWPASS, 2.0f ); 
+FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
+// Low pss filter for Air flow data. Should correct the measure aliasing
+// of counting MAG HZ in short period of 10ms (which may lead to very quantified result
+// at low HZ).
+FilterOnePole gAirflowLPF(LOWPASS, 50.0f ); 
 
 #define VERSION_MAJOR	0
 #define VERSION_MINOR	2
@@ -300,11 +306,11 @@ FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
 // Other constants
 #define LOOP_PERIOD 10	// loop period in ms
 
-
-#define CONFIG_VER 0
+#define CONFIG_VER 1
 
 // Configuration tables
-struct Config
+// Config version 0
+struct Config0
 {
 	// Type circumference in meter
 	float	tyreCircum = 2.02f;
@@ -373,6 +379,15 @@ struct Config
 		{100, 100, 100, 100},
 	};
 };
+
+// Config ver 1
+struct Config : public Config0
+{
+	// Max scaling of throttle sensor to report 100% throttle position.
+	// This allow to compensate for small adjustement of throttle (e.g. sensor reporting 95% @WOT)
+	uint8_t	throttleScale = 100;
+};
+
 Config	gConfig;
 
 /// Indicator set when the conf need to be saved
@@ -390,16 +405,16 @@ struct Measurement
 	float	THROTTLE = 0.0f;
 	// Throttle deriv in %/s (-1000..1000%/s)
 	float	THROTTLE_DERIV = 0.0f;
-  // Air flow HZ
-  float AIR_FLOW = 0.0f;
+	// Air flow HZ
+	float AIR_FLOW = 0.0f;
 	// Solenoid duty cycle in % (0..100)
 	float	SOL_DC = 0.0f;
 	// Computed gear (0..5 or 6)
 	uint8_t	GEAR = 0;
 	// Target boost in Bar (relative)
 	float	TARGET_BOOST = 0.0f;
-  // Computed target output boost (output of PID corrector)
-  float TARGET_OUTPUT = 0.0f;
+	// Computed target output boost (output of PID corrector)
+	float TARGET_OUTPUT = 0.0f;
 	// Engine load (%)
 	float	LOAD = 0.0f;
 	// Boost controler chip load (%)
@@ -432,16 +447,12 @@ uint32_t	gLastSPEEDDate = 0;
 uint32_t	gSPEEDBuffer[4] = {0,0,0,0};
 uint8_t		gSPEEDBufferHead = 0; 
 uint32_t	gSPEEDAccum = 0;
-uint32_t  gLastAirFlowDate = 0;
-uint32_t  gAirFlowBuffer[4] = {0,0,0,0};
-uint8_t   gAirFlowBufferHead = 0;
-uint32_t  gAirFlowAccum = 0;
+// Count the number of raising edge on MAF input
+uint8_t		gAirFlowAccum = 0;
 // RPM period in µs, 0 means no signal.
 volatile uint32_t	gRPMPeriod = INT32_MAX;
 // SPEED period in µs, 0 means no signal.
 volatile uint32_t	gSPEEDPeriod = INT32_MAX;
-// Air flow period in µs, 0 means no signal.
-volatile uint32_t  gAirFlowPeriod = INT32_MAX;
 
 // Main loop variables
 uint32_t	gLastEvalCycle = 0;
@@ -477,10 +488,10 @@ ISR (PCINT0_vect)
 	//  check RPM raising edge
 	if ((changed & 0x10) && (b & 0x10))
 	{
-//    digitalWrite(13,digitalRead(RPM_IN) and digitalRead(SPEED_IN));
-//    TOGGLE_DEBUG
-//    digitalWrite(RPM_OUT, rpmOut);    
-    rpmOut = !rpmOut;
+//    	digitalWrite(13,digitalRead(RPM_IN) and digitalRead(SPEED_IN));
+//    	TOGGLE_DEBUG
+//    	digitalWrite(RPM_OUT, rpmOut);    
+    	rpmOut = !rpmOut;
 
 		// RPM changed !
 		uint32_t period = now - gLastRPMDate;
@@ -491,13 +502,12 @@ ISR (PCINT0_vect)
 		gRPMAccum += period;
 		
 		gRPMPeriod = gRPMAccum>>2;
-//    gRPMPeriod = period;
 	}
 	// Check SPEED raising edge
 	if ((changed & 0x08) && (b & 0x08))
 	{
-//    digitalWrite(SPEED_OUT, speedOut);
-    speedOut = !speedOut;
+//    	digitalWrite(SPEED_OUT, speedOut);
+    	speedOut = !speedOut;
 
 		// Speed changed !
 		uint32_t period = now - gLastSPEEDDate;
@@ -510,20 +520,11 @@ ISR (PCINT0_vect)
 		gSPEEDPeriod = gSPEEDAccum>>2;
 //    gSPEEDPeriod = period;
 	}
-  // Check AIR FLOW raising edge
-  if ((changed & 0x04) && (b & 0x04))
-  {
-    // Air flow changed !
-    uint32_t period = now - gLastAirFlowDate;
-    gLastAirFlowDate = now;
-    gAirFlowAccum -= gAirFlowBuffer[gAirFlowBufferHead];
-    gAirFlowBuffer[gAirFlowBufferHead++] = period;
-    gAirFlowBufferHead &= 0x3;
-    gAirFlowAccum += period;
-    
-    gAirFlowPeriod = gAirFlowAccum>>2;
-//    gAirFlowPeriod = period;
-  }
+	// Check AIR FLOW raising edge
+	if ((changed & 0x04) && (b & 0x04))
+	{
+		++gAirFlowAccum;
+	}
 }
 
 void pciSetup(byte pin)
@@ -564,23 +565,33 @@ void saveConfig()
 void loadConfig()
 {
 	VersionInfo refVi;
-  refVi.mVersionString[8] = CONFIG_VER;
+  	refVi.mVersionString[8] = CONFIG_VER;
 	VersionInfo vi;
 	EEPROM.get(0, vi);
 
-  Serial.write("Version info loaded : ");
-  Serial.write(vi.mVersionString);
-  Serial.write("\n");
+	Serial.write("Version info loaded : ");
+	Serial.write(vi.mVersionString);
+	Serial.write("\n");
 
-	if (refVi != vi)
+	Serial.write("Loading conf\n");
+	if (vi.mVersionString[8] == 0)
+	{
+		EEPROM.get(16, static_cast<Config0&>(gConfig));
+		// Need to write the conf back
+		gConfChanged = true;
+	}
+	else if (vi.mVersionString[8] == CONFIG_VER)
+ 	{
+		// Load last version of config, no convertion required
+		EEPROM.get(16, gConfig);
+	}
+	else
 	{
 		// no data, or need conversion
+		Serial.write("Unknwon conf version found, ignoring\n");
 		return;
 	}
-  
-  Serial.write("Loading conf\n");
-	EEPROM.get(16, gConfig);
-  Serial.write("Conf loaded\n");
+	Serial.write("Conf loaded\n");
 }
 
 void setup()
@@ -674,16 +685,19 @@ float spool = 0.0f;
 
 void evalCycle()
 {
+	static uint32_t previousLoopDate = 0;
+
 	// read input and process inputs
 	//------------------------------
 	uint8_t oldSREG = SREG;
 	cli();
 	uint32_t RPMPeriod = gRPMPeriod;
 	uint32_t SPEEDPeriod = gSPEEDPeriod;
-	uint32_t airFlowPeriod = gAirFlowPeriod;
 	uint32_t lastRPMDate = gLastRPMDate;
 	uint32_t lastSPEEDDate = gLastSPEEDDate;
-	uint32_t lastAirFlowDate = gLastAirFlowDate;
+	int8_t lastAirflowAccum = gAirFlowAccum;
+	// reset air flow accum for next loop
+	gAirFlowAccum = 0;
 	SREG = oldSREG;
 
 	uint32_t now = micros();
@@ -692,34 +706,18 @@ void evalCycle()
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric presure)...
 	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
 
-#if 0
-	else
-	{
-    float dt = LOOP_PERIOD * 0.001f;
-		// MAP simulation
-    // simulate piston movement
-    pistonPos += (gMeasures.MAP - 1.4f) * (1.0f - (gMeasures.SOL_DC * 0.01f)) * dt / 0.2f;
-    pistonPos -= (gMeasures.SOL_DC * 0.01f) * dt / 0.2f;
-//    pistonPos = pistonFilter.input(pistonPos);
-    pistonPos = constrain(pistonPos, 0.0f, 1.0f);
-
-    // turbo spool simulation
-    spool += 200000.0f * gMeasures.LOAD * 0.01f * (1.0 - pistonPos * 0.9f) * dt;
-    spool -= spool * 0.5f * dt - 100.0f;
-    spool = constrain(spool, 0.0f, 170000.0f);
-   
-		gMeasures.MAP = gMeasures.MAP  - (gMeasures.MAP * 0.8f * dt) - 0.001f
-//		  + gMeasures.THROTTLE * 0.01f * (1.0f - pistonPos) * gMeasures.LOAD * 0.01f * 0.8f * (LOOP_PERIOD * 0.001f);
-//      + gMeasures.THROTTLE * 0.01f * (1.0f - pistonPos) * ((gMeasures.LOAD + 1.0f) * 0.01f * 2.0f) * ((gMeasures.LOAD + 1.0f) * 0.01f * 2.0f) * dt;
-      + (1.0f - pistonPos) * (spool / 100000.0) * (spool / 100000.0) * dt;
-//    gMeasures.MAP = constrain(gMeasures.MAP, gMeasures.THROTTLE * 0.01f, gMeasures.MAP);
-    gMeasures.MAP *= gMeasures.THROTTLE * 0.01f;
-    gMeasures.MAP = max(gMeasures.MAP, gMeasures.THROTTLE * 0.01f);
-	} 
-#endif
 
 	// Throttle analog read. 0..100% => 0..5V
 	gMeasures.THROTTLE = analogRead(THROTTLE_IN) * (100.0f / 1023.f);
+	// Scale throttle value with max scale correction
+	if (gMeasures.THROTTLE > gConfig.throttleScale)
+	{
+		// We found a greater value, update max scale
+		gConfig.throttleScale = uint8_t(round(gMeasures.THROTTLE));
+		// MAke sure to save it
+		gConfChanged = true;
+	}
+	gMeasures.THROTTLE = gMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f; 
 	gThrottleDerivFilter[gThrottleDerivFilterIndex] = (gMeasures.THROTTLE - gLastThrottle) / (LOOP_PERIOD * 0.001f);
 	gThrottleDerivFilterIndex += 1;
 	gThrottleDerivFilterIndex = gThrottleDerivFilterIndex % 16;
@@ -742,12 +740,6 @@ void evalCycle()
 		// 0 stand for 0 speed
 		SPEEDPeriod = 0;
 	}
-	// Detect 0 Airflow: last pulse > 10Hz period (0.1s): 100.000µs
-	if (airFlowPeriod > 0 and (now - lastAirFlowDate) > 100000)
-	{
-		// 0 stand for 0 speed
-		airFlowPeriod = 0;
-	}
 
 	// Convert µs period into Hz
 	// RPM need an additional ratio of 3 to account for the number of cylinder fired each revolution.
@@ -767,9 +759,15 @@ void evalCycle()
 	{
 		gMeasures.SPEED = 0.0;
 	}
-	if (airFlowPeriod > 0)
+
+	// Compute airflow HZ
+	uint32_t dtms = now - previousLoopDate;
+	float dts = dtms / 1000000.0f;
+	if (dts > 0.0f)
 	{
-		gMeasures.AIR_FLOW = 1000000.0f / (airFlowPeriod);
+		float airFlowHz = lastAirflowAccum / dts; 
+		// Filter HZ value
+		gMeasures.AIR_FLOW = gAirflowLPF.input(airFlowHz);
 	}
 	else
 	{
@@ -1035,41 +1033,42 @@ private:
 		uint16_t mAddr;
 		float mFactor;
 		bool mSigned;
+		bool mSavedInConf;
 	};
 
 #define BYTE_TABLE_PARAM_LINE4(addr) \
-	{false, addr+0, 1.0f, false}, \
-	{false, addr+1, 1.0f, false}, \
-	{false, addr+2, 1.0f, false}, \
-	{false, addr+3, 1.0f, false}, 
+	{false, addr+0, 1.0f, false, true}, \
+	{false, addr+1, 1.0f, false, true}, \
+	{false, addr+2, 1.0f, false, true}, \
+	{false, addr+3, 1.0f, false, true}, 
 
 #define BYTE_TABLE_PARAM_LINE6(addr) \
-	{false, addr+0, 1.0f, false}, \
-	{false, addr+1, 1.0f, false}, \
-	{false, addr+2, 1.0f, false}, \
-	{false, addr+3, 1.0f, false}, \
-	{false, addr+4, 1.0f, false}, \
-	{false, addr+5, 1.0f, false},
+	{false, addr+0, 1.0f, false, true}, \
+	{false, addr+1, 1.0f, false, true}, \
+	{false, addr+2, 1.0f, false, true}, \
+	{false, addr+3, 1.0f, false, true}, \
+	{false, addr+4, 1.0f, false, true}, \
+	{false, addr+5, 1.0f, false, true},
 
 #define BYTE_TABLE_PARAM_LINE7(addr) \
-	{false, addr+0, 1.0f, false}, \
-	{false, addr+1, 1.0f, false}, \
-	{false, addr+2, 1.0f, false}, \
-	{false, addr+3, 1.0f, false}, \
-	{false, addr+4, 1.0f, false}, \
-	{false, addr+5, 1.0f, false}, \
-	{false, addr+6, 1.0f, false},
+	{false, addr+0, 1.0f, false, true}, \
+	{false, addr+1, 1.0f, false, true}, \
+	{false, addr+2, 1.0f, false, true}, \
+	{false, addr+3, 1.0f, false, true}, \
+	{false, addr+4, 1.0f, false, true}, \
+	{false, addr+5, 1.0f, false, true}, \
+	{false, addr+6, 1.0f, false, true},
 
 	static const constexpr Accessor mByteAccessors[] =
 	{
-		{true,  0x000, 50.0f, false},	// MAP
-		{true,  0x001, 1.0f,  false},	// Throttle
-		{true,  0x002, 1.0f,  false},	// WFDC
-		{false, 0x003, 1.0f,  false},	// Gear
-		{true,  0x004, 1.0f,  false},	// Engine load
-		{true,  0x005, 1.0f,  false},	// CPU load
-		{true,  0x006, 50.0f, false},	// Target boost
-		{true,  0x007, 50.0f, false},	// Target output
+		{true,  0x000, 50.0f, false, false},	// MAP
+		{true,  0x001, 1.0f,  false, false},	// Throttle
+		{true,  0x002, 1.0f,  false, false},	// WFDC
+		{false, 0x003, 1.0f,  false, false},	// Gear
+		{true,  0x004, 1.0f,  false, false},	// Engine load
+		{true,  0x005, 1.0f,  false, false},	// CPU load
+		{true,  0x006, 50.0f, false, false},	// Target boost
+		{true,  0x007, 50.0f, false, false},	// Target output
 
 		// Sol DC table : boost x load (6x4)
 		BYTE_TABLE_PARAM_LINE4(0x008+4*0)
@@ -1092,29 +1091,29 @@ private:
 		// Boost correction table : throttle deriv 
 		BYTE_TABLE_PARAM_LINE7(0x050)
 
-		{false,  0x057, 1.0f, false},	// Test WG
-		{false,  0x058, 1.0f, false},	// Version major
-		{false,  0x059, 1.0f, false},	// Version minor
-
+		{false,  0x057, 1.0f, false, false},	// Test WG
+		{false,  0x058, 1.0f, false, false},	// Version major
+		{false,  0x059, 1.0f, false, false},	// Version minor
+		{false,  0x05a, 1.0f, false, true},		// Throttle sensor adjust
 	};
 
 	static const constexpr Accessor mWordAccessors[] =
 	{
-		{true,  0x800, 1000.0f, false},	// Tire circ
+		{true,  0x800, 1000.0f, false, true},	// Tire circ
 
-		{true,  0x801, 1000.0f, false},	// 1st gear ratio
-		{true,  0x802, 1000.0f, false},	// 2nd gear ratio
-		{true,  0x803, 1000.0f, false},	// 3rd gear ratio
-		{true,  0x804, 1000.0f, false},	// 4th gear ratio
-		{true,  0x805, 1000.0f, false},	// 5th gear ratio
-		{true,  0x806, 1000.0f, false},	// 6th gear ratio
+		{true,  0x801, 1000.0f, false, true},	// 1st gear ratio
+		{true,  0x802, 1000.0f, false, true},	// 2nd gear ratio
+		{true,  0x803, 1000.0f, false, true},	// 3rd gear ratio
+		{true,  0x804, 1000.0f, false, true},	// 4th gear ratio
+		{true,  0x805, 1000.0f, false, true},	// 5th gear ratio
+		{true,  0x806, 1000.0f, false, true},	// 6th gear ratio
 
-		{true,  0x807, 1000.0f, false},	// Speed correction
-		{true,  0x809, 1000.0f, false},	// Reference boost
+		{true,  0x807, 1000.0f, false, true},	// Speed correction
+		{true,  0x809, 1000.0f, false, true},	// Reference boost
 
-		{true,  0x80a, 1000.0f, false},	// P
-		{true,  0x80a, 1000.0f, false},	// I
-		{true,  0x80b, 1000.0f, false},	// D
+		{true,  0x80a, 1000.0f, false, true},	// P
+		{true,  0x80a, 1000.0f, false, true},	// I
+		{true,  0x80b, 1000.0f, false, true},	// D
 
 		{true,  0x80c, 1.0f, false},	// RPM
 		{true,  0x80d, 1.0f, false},	// Speed
@@ -1176,6 +1175,12 @@ private:
 				getByteParam(accessor.mAddr) = value / accessor.mFactor;
 			}
 		}
+
+		if (accessor.mSavedInConf)
+		{
+			// Trigger a save in EEPROM
+			gConfChanged = true;
+		}
 	}
 
 	uint16_t readWord(uint16_t addr)
@@ -1224,6 +1229,12 @@ private:
 		else
 		{
 			getByteParam(accessor.mAddr) = value / accessor.mFactor;
+		}
+		
+		if (accessor.mSavedInConf)
+		{
+			// Trigger a save in EEPROM
+			gConfChanged = true;
 		}
 	}
 

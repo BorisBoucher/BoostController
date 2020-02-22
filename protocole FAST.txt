@@ -85,6 +85,8 @@ Memory mapping:
 	0x057	u8			1		Solenoid duty cycle test command, 0..100 (0 : test off)
 	0x058	u8			1		Firmware major version
 	0x059	u8			1		Firmware minor version
+	
+	0x05a	u8			1		Throttle Max calibration to allow 100% scale even if sensor report 95%. 0..100 
 
 0x200 - 0x3ff	2048 16 bits words
 
