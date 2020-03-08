@@ -818,7 +818,7 @@ void evalCycle()
 	gMeasures.TARGET_BOOST = targetLowpassFilter.input(gMeasures.TARGET_BOOST);
 	
 	// 2nd, apply PID filter to compute boost error
-	float error = gMeasures.TARGET_BOOST - (gMeasures.MAP);
+	float error = gMeasures.TARGET_BOOST - (max(0.0f, gMeasures.MAP));
 	float P = error * gConfig.pidParam[0];
 	// Integral windup check
 	if (gMeasures.RPM > 2000 && fabs(error) < 0.4f)
@@ -869,6 +869,12 @@ void evalCycle()
 //  	testIndex += 1;
 //  	if (testIndex > 5)
 //    		testIndex = 0;
+	}
+
+	// At last, prevent the solenoid to activate if the speed if low
+	if (gMeasures.SPEED < 8.0f)
+	{
+		gMeasures.SOL_DC = 0.0f;
 	}
 
 	// Take simulation into account
