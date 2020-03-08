@@ -282,7 +282,7 @@ FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
 // Low pss filter for Air flow data. Should correct the measure aliasing
 // of counting MAG HZ in short period of 10ms (which may lead to very quantified result
 // at low HZ).
-FilterOnePole gAirflowLPF(LOWPASS, 50.0f ); 
+FilterOnePole gAirflowLPF(LOWPASS, 5.0f ); 
 
 #define VERSION_MAJOR	0
 #define VERSION_MINOR	2
@@ -571,6 +571,7 @@ void loadConfig()
 
 	Serial.write("Version info loaded : ");
 	Serial.write(vi.mVersionString);
+	Serial.print(int(vi.mVersionString[8]));
 	Serial.write("\n");
 
 	Serial.write("Loading conf\n");
@@ -611,7 +612,7 @@ void setup()
 	// Configure IO pins
 	pinMode(RPM_IN, INPUT_PULLUP);
 	pinMode(SPEED_IN, INPUT_PULLUP);
-	pinMode(AIRFLOW_IN, INPUT);
+	pinMode(AIRFLOW_IN, INPUT_PULLUP);
 	pinMode(SOLENOID_OUT, OUTPUT);
 	pinMode(DEBUG_OUT, OUTPUT);
 
@@ -761,8 +762,8 @@ void evalCycle()
 	}
 
 	// Compute airflow HZ
-	uint32_t dtms = now - previousLoopDate;
-	float dts = dtms / 1000000.0f;
+	uint32_t dtus = now - previousLoopDate;
+	float dts = dtus / 1000000.0f;
 	if (dts > 0.0f)
 	{
 		float airFlowHz = lastAirflowAccum / dts; 
@@ -773,7 +774,7 @@ void evalCycle()
 	{
 		gMeasures.AIR_FLOW = 0.0;
 	}
-  
+
   	computeGear();
 	
 	// Compute engine load
@@ -899,6 +900,8 @@ void evalCycle()
 	{
 		cycleIndex = 0;
 	}
+
+	previousLoopDate = now;
 }
 
 // Fast comm protocol.
@@ -966,6 +969,10 @@ private:
 		else if (addr == 0x059)
 		{
 			return gInfo.versionMinor;
+		}
+		else if (addr == 0x05a)
+		{
+			return gConfig.throttleScale;
 		}
 
 		return placeHolder;

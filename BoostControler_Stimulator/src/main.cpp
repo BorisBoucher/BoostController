@@ -89,7 +89,8 @@ void loop() {
     gState.mRpm = engineRpm;
 
     // Compute estimate of MAF Hz 
-    gState.mMaf = engineRpm * 0.276f;
+    // 2800Hz @ 6000rpm
+    gState.mMaf = engineRpm * 0.46f;
 
     // Compute speed, engine and maf pulse period
     float speedHz = gState.mSpeed * 0.73f;
