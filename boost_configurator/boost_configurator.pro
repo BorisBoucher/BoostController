@@ -34,7 +34,8 @@ SOURCES += \
     qcustomplot.cpp \
     mutservice.cpp \
     logger.cpp \
-    plotter.cpp
+    plotter.cpp \
+	setting.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +44,9 @@ HEADERS += \
     qcustomplot.h \
     mutservice.h \
     logger.h \
-    plotter.h
+    plotter.h \
+	setting.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+        setting.ui

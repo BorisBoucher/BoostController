@@ -25,10 +25,8 @@ class MainWindow : public QMainWindow, public IMutDataProvider
 {
     Q_OBJECT
 
-//	SnxProtocol* mSnxProtocol = nullptr;
 	FastCom* mFastCom = nullptr;
 	MutService	mMutService;
-//	SnxComm* mSnxComm = nullptr;
     QTimer* mTimer = nullptr;
 //    QtCharts::QLineSeries *mSeries = nullptr;
 //    QtCharts::QChart* mChart = nullptr;
@@ -53,6 +51,13 @@ class MainWindow : public QMainWindow, public IMutDataProvider
 
 	std::map<uint16_t, Accessor> mAccessors;
 
+	struct
+	{
+		QString	mOutputDir;
+		QString mBCPort;
+		QString mMutPort;
+	} mConfig;
+
 	void processFastcomReads();
 	void fastComWrite(const std::initializer_list<uint16_t>& addrs);
 	void readFastCom(const std::initializer_list<uint16_t>& addrs);
@@ -75,10 +80,6 @@ public slots:
     void reloadConfig();
     void connectPort();
     void closePort();
-//	void onWriteByte(uint16_t addr, uint8_t value);
-//	void onAddrFloat(uint16_t addr);
-//	void onReadBytes(const std::vector<SnxProtocol::AddrInfo>& readInfo);
-//	void onError(SnxProtocol::Error error);
 
 private slots:
     void on_reloadButton_clicked();
@@ -98,6 +99,8 @@ private slots:
     void on_listTable_itemSelectionChanged();
 
 	void on_baseBoostEdit_editingFinished();
+
+	void on_maxThrottleEdit_editingFinished();
 
 	void on_forceWGEdit_editingFinished();
 
@@ -124,6 +127,10 @@ private slots:
 
 	void on_speedRatioEdit_editingFinished();
 
+	void on_actionSetup_triggered();
+
+	void on_actionOpen_log_dir_triggered();
+
 private:
 
     struct TableInfo
@@ -149,10 +156,6 @@ private:
                            uint16_t baseAddr, uint16_t rowStride);
 
 	void resizeEvent(QResizeEvent *event) override;
-
-//	void recvFloat(uint16_t addr, float value);
-
-//    void processRead();
 
     Ui::MainWindow *ui;
 

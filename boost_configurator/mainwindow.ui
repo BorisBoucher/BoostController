@@ -106,6 +106,9 @@
                 </property>
                 <item>
                  <widget class="QComboBox" name="comboBox">
+                  <property name="enabled">
+                   <bool>false</bool>
+                  </property>
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -171,8 +174,23 @@
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
               <layout class="QGridLayout" name="gridLayout_2">
-               <item row="13" column="1">
-                <widget class="QLineEdit" name="speedRatioEdit">
+               <item row="8" column="1">
+                <widget class="QLineEdit" name="gear2Edit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="10" column="1">
+                <widget class="QLineEdit" name="gear4Edit">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
@@ -190,305 +208,6 @@
                 <widget class="Line" name="line">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="1">
-                <widget class="QLineEdit" name="gear1Edit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="14" column="1">
-                <widget class="QLineEdit" name="baseBoostEdit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="14" column="2">
-                <widget class="QLabel" name="label_13">
-                 <property name="text">
-                  <string>BAR</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="13" column="0">
-                <widget class="QLabel" name="label_10">
-                 <property name="text">
-                  <string>Speed sensor</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="5">
-                <widget class="QLineEdit" name="firmwareVersion">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMethodHints">
-                  <set>Qt::ImhFormattedNumbersOnly</set>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="12" column="5">
-                <widget class="QLineEdit" name="forceWGEdit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="text">
-                  <string>0</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="9" column="0">
-                <widget class="QLabel" name="label_6">
-                 <property name="text">
-                  <string>3rd gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="5">
-                <widget class="QLineEdit" name="pidPEdit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMethodHints">
-                  <set>Qt::ImhFormattedNumbersOnly</set>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="11" column="0">
-                <widget class="QLabel" name="label_8">
-                 <property name="text">
-                  <string>5th gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="8" column="1">
-                <widget class="QLineEdit" name="gear2Edit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="13" column="2">
-                <widget class="QLabel" name="label_11">
-                 <property name="text">
-                  <string>Hz/km/h</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="2">
-                <widget class="QLabel" name="label_2">
-                 <property name="text">
-                  <string>m</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="9" column="1">
-                <widget class="QLineEdit" name="gear3Edit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="10" column="0">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>4th gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="9" column="4">
-                <widget class="QLabel" name="label_17">
-                 <property name="text">
-                  <string>D</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="0">
-                <widget class="QLabel" name="label_4">
-                 <property name="text">
-                  <string>1st gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="11" column="1">
-                <widget class="QLineEdit" name="gear5Edit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="8" column="0">
-                <widget class="QLabel" name="label_5">
-                 <property name="text">
-                  <string>2nd gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="7" column="4">
-                <widget class="QLabel" name="label_15">
-                 <property name="text">
-                  <string>P</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="4">
-                <widget class="QLabel" name="label_14">
-                 <property name="text">
-                  <string>PID</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="12" column="4">
-                <widget class="QLabel" name="label_40">
-                 <property name="text">
-                  <string>Force Waste Gate</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="0">
-                <widget class="QLabel" name="label_3">
-                 <property name="text">
-                  <string>Gear Ratio</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="3" rowspan="11">
-                <widget class="Line" name="line_2">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
-                   <horstretch>0</horstretch>
-                   <verstretch>2</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="lineWidth">
-                  <number>1</number>
-                 </property>
-                 <property name="orientation">
-                  <enum>Qt::Vertical</enum>
-                 </property>
-                </widget>
-               </item>
-               <item row="9" column="5">
-                <widget class="QLineEdit" name="pidDEdit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="16" column="0">
-                <widget class="QLabel" name="label_36">
-                 <property name="text">
-                  <string>MUT Port</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="4" column="4">
-                <widget class="QLabel" name="label_41">
-                 <property name="text">
-                  <string>Firmware Version</string>
                  </property>
                 </widget>
                </item>
@@ -523,28 +242,67 @@
                  </property>
                 </widget>
                </item>
-               <item row="16" column="4" rowspan="2">
-                <widget class="QPushButton" name="buttonOpenMut">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
-                   <horstretch>0</horstretch>
-                   <verstretch>2</verstretch>
-                  </sizepolicy>
+               <item row="4" column="5">
+                <widget class="QLineEdit" name="firmwareVersion">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
                  </property>
-                 <property name="text">
-                  <string>OPEN </string>
+                 <property name="inputMethodHints">
+                  <set>Qt::ImhFormattedNumbersOnly</set>
                  </property>
-                </widget>
-               </item>
-               <item row="4" column="0">
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Tyre Circumference</string>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="readOnly">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
-               <item row="10" column="1">
-                <widget class="QLineEdit" name="gear4Edit">
+               <item row="16" column="5" rowspan="2">
+                <widget class="QPushButton" name="buttonCloseMut">
+                 <property name="text">
+                  <string>CLOSE</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="12" column="4">
+                <widget class="QLabel" name="label_39">
+                 <property name="text">
+                  <string>Simulation</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="label_3">
+                 <property name="text">
+                  <string>Gear Ratio</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="text">
+                  <string>5th gear</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="4">
+                <widget class="QLabel" name="label_40">
+                 <property name="text">
+                  <string>Force Waste Gate</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="1">
+                <widget class="QLineEdit" name="gear3Edit">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
@@ -558,24 +316,165 @@
                  </property>
                 </widget>
                </item>
+               <item row="7" column="4">
+                <widget class="QLabel" name="label_15">
+                 <property name="text">
+                  <string>P</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="8" column="5">
+                <widget class="QLineEdit" name="pidIEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="4">
+                <widget class="QLabel" name="label_41">
+                 <property name="text">
+                  <string>Firmware Version</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="16" column="1">
+                <widget class="QComboBox" name="portListMut">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                   <horstretch>2</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="0">
+                <widget class="QLabel" name="label_6">
+                 <property name="text">
+                  <string>3rd gear</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="4">
+                <widget class="QLabel" name="label_14">
+                 <property name="text">
+                  <string>PID</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="5">
+                <widget class="QLineEdit" name="forceWGEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>0</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="10" column="0">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>4th gear</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="14" column="2">
+                <widget class="QLabel" name="label_13">
+                 <property name="text">
+                  <string>BAR</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="1">
+                <widget class="QLineEdit" name="gear1Edit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="2">
+                <widget class="QLabel" name="label_2">
+                 <property name="text">
+                  <string>m</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Tyre Circumference</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="4" column="3" rowspan="11">
+                <widget class="Line" name="line_2">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                   <horstretch>0</horstretch>
+                   <verstretch>2</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="lineWidth">
+                  <number>1</number>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item row="16" column="0">
+                <widget class="QLabel" name="label_36">
+                 <property name="text">
+                  <string>MUT Port</string>
+                 </property>
+                </widget>
+               </item>
                <item row="14" column="0">
                 <widget class="QLabel" name="label_12">
                  <property name="text">
                   <string>Base target boost</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="16" column="5" rowspan="2">
-                <widget class="QPushButton" name="buttonCloseMut">
-                 <property name="text">
-                  <string>CLOSE</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="11" column="4">
-                <widget class="QLabel" name="label_39">
-                 <property name="text">
-                  <string>Simulation</string>
                  </property>
                 </widget>
                </item>
@@ -589,12 +488,100 @@
                  </property>
                 </widget>
                </item>
-               <item row="8" column="5">
-                <widget class="QLineEdit" name="pidIEdit">
+               <item row="16" column="4" rowspan="2">
+                <widget class="QPushButton" name="buttonOpenMut">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                   <horstretch>0</horstretch>
+                   <verstretch>2</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>OPEN </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="0">
+                <widget class="QLabel" name="label_10">
+                 <property name="text">
+                  <string>Speed sensor</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="1">
+                <widget class="QLineEdit" name="gear5Edit">
                  <property name="font">
                   <font>
                    <pointsize>12</pointsize>
                   </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="5">
+                <widget class="QLineEdit" name="maxThrottleEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="1">
+                <widget class="QLineEdit" name="speedRatioEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="4">
+                <widget class="QLabel" name="label_17">
+                 <property name="text">
+                  <string>D</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="8" column="0">
+                <widget class="QLabel" name="label_5">
+                 <property name="text">
+                  <string>2nd gear</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="5">
+                <widget class="QLineEdit" name="pidPEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMethodHints">
+                  <set>Qt::ImhFormattedNumbersOnly</set>
                  </property>
                  <property name="inputMask">
                   <string/>
@@ -619,13 +606,71 @@
                  </property>
                 </widget>
                </item>
-               <item row="16" column="1">
-                <widget class="QComboBox" name="portListMut">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                   <horstretch>2</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
+               <item row="7" column="0">
+                <widget class="QLabel" name="label_4">
+                 <property name="text">
+                  <string>1st gear</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="2">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Hz/km/h</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="14" column="1">
+                <widget class="QLineEdit" name="baseBoostEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="9" column="5">
+                <widget class="QLineEdit" name="pidDEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="4">
+                <widget class="QLabel" name="label_44">
+                 <property name="text">
+                  <string>Max throttle</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="11" column="6">
+                <widget class="QLabel" name="label_45">
+                 <property name="text">
+                  <string>%</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="6">
+                <widget class="QLabel" name="label_46">
+                 <property name="text">
+                  <string>%</string>
                  </property>
                 </widget>
                </item>
@@ -1603,7 +1648,7 @@
      <x>0</x>
      <y>0</y>
      <width>965</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -1633,6 +1678,9 @@
    <addaction name="actionStart_Log"/>
    <addaction name="actionConnect"/>
    <addaction name="actionConnectMut"/>
+   <addaction name="actionOpen_log_dir"/>
+   <addaction name="separator"/>
+   <addaction name="actionSetup"/>
   </widget>
   <action name="actionStart_Log">
    <property name="checkable">
@@ -1675,8 +1723,41 @@
    <property name="text">
     <string>ConnectMut</string>
    </property>
+   <property name="toolTip">
+    <string>Connect MUT logger</string>
+   </property>
    <property name="shortcut">
     <string>F3</string>
+   </property>
+  </action>
+  <action name="actionSetup">
+   <property name="icon">
+    <iconset>
+     <normaloff>config.png</normaloff>config.png</iconset>
+   </property>
+   <property name="text">
+    <string>Setup</string>
+   </property>
+   <property name="toolTip">
+    <string>Setup</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionOpen_log_dir">
+   <property name="icon">
+    <iconset>
+     <normaloff>open_dir.png</normaloff>open_dir.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open log dir</string>
+   </property>
+   <property name="toolTip">
+    <string>Open log directory</string>
+   </property>
+   <property name="shortcut">
+    <string>F4</string>
    </property>
   </action>
  </widget>

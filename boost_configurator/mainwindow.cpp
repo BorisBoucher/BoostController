@@ -4,11 +4,35 @@
 #include <qtimer.h>
 #include <QtSerialPort/qserialportinfo.h>
 #include <algorithm>
+#include "setting.h"
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::MainWindow)
 {
+	QCoreApplication::setOrganizationName("SnxLab");
+	QCoreApplication::setOrganizationDomain("snxlab.io");
+	QCoreApplication::setApplicationName("Snx BC Configurator");
+
+	QSettings settings;
+
+	mConfig.mOutputDir = settings.value(
+			"logDir",
+			QStandardPaths::writableLocation(
+					QStandardPaths::StandardLocation::AppDataLocation)).toString();
+
+	mConfig.mBCPort = settings.value(
+			"BCPort",
+			"").toString();
+
+	mConfig.mMutPort = settings.value(
+			"MUTPort",
+			"").toString();
+
+	// Create log directory
+	QDir dir;
+	dir.mkpath(mConfig.mOutputDir);
+
 	initAccessors();
 	ui->setupUi(this);
 	//    ui->tableView->setModel(&myModel);
@@ -25,6 +49,9 @@ MainWindow::MainWindow(QWidget *parent) :
 		ui->comboBox->addItem(portInfo.portName());
 		ui->portListMut->addItem(portInfo.portName());
 	}
+
+	ui->comboBox->setCurrentIndex(ui->comboBox->findText(mConfig.mBCPort));
+	ui->portListMut->setCurrentIndex(ui->portListMut->findText(mConfig.mMutPort));
 
 	QLocale myLocale(QLocale::Language::English);
 	QLocale::setDefault(myLocale);
@@ -302,6 +329,7 @@ void MainWindow::initAccessors()
 					{true,  SPEED,             1.0f, false, measureOffset(mSpeed)		},
 					{true,  THROTTLE_DERIV,    1.0f, true,  measureOffset(mThrottleDeriv)},
 					{true,  AIR_FLOW,          1.0f, false, measureOffset(mAirFlow)		},
+					{false, MAX_THROTTLE,      1.0f, false, configOffset(mMaxThrottle)	},
 				});
 
 	// Tables
@@ -461,6 +489,7 @@ void MainWindow::reloadConfig()
 					PID_I,
 					PID_D,
 					WGDC_TEST,
+					MAX_THROTTLE,
 				});
 }
 
@@ -622,6 +651,9 @@ void MainWindow::notifyReads(const std::set<uint16_t>& addrs)
 		case GEAR:
 			ui->gearEdit->setText(QString::number(int(mMeasures.mGear)));
 			break;
+		case MAX_THROTTLE:
+			ui->maxThrottleEdit->setText(QString::number(int(mConfigData.mMaxThrottle)));
+			break;
 		default:
 			{
 				// check if the addr is in the current displayed table
@@ -660,7 +692,7 @@ uint8_t MainWindow::getMutData(uint8_t varId)
 		return mMeasures.mSpeed * 0.5f;
 	case 0x38:
 		// MAP (boost), P / 0.01334 (bar)
-		return mMeasures.mMAP / 0.1334;
+		return mMeasures.mMAP / 0.1334f;
 	case 0x02:
 		// RPM low, latch RPM.
 		// (RPM * 256 / 1000) & 0xff
@@ -692,6 +724,12 @@ void MainWindow::on_baseBoostEdit_editingFinished()
 	fastComWrite({REF_BOOST});
 }
 
+void MainWindow::on_maxThrottleEdit_editingFinished()
+{
+	mConfigData.mMaxThrottle = ui->maxThrottleEdit->text().toFloat();
+	fastComWrite({MAX_THROTTLE});
+}
+
 void MainWindow::on_pidPEdit_editingFinished()
 {
 	mConfigData.mPidP = ui->pidPEdit->text().toFloat();
@@ -712,7 +750,7 @@ void MainWindow::on_pidDEdit_editingFinished()
 
 void MainWindow::on_forceWGEdit_editingFinished()
 {
-	mSimulationData.mForceWG = ui->forceWGEdit->text().toInt();
+	mSimulationData.mForceWG = uint8_t(ui->forceWGEdit->text().toInt());
 	fastComWrite({WGDC_TEST});
 }
 
@@ -756,8 +794,8 @@ void MainWindow::createTableWidget(QString name,
 	//    table->sizePolicy().setVerticalStretch(0);
 	table->setWordWrap(false);
 	table->setCornerButtonEnabled(false);
-	table->setRowCount(rowNames.size());
-	table->setColumnCount(columnNames.size());
+	table->setRowCount(int(rowNames.size()));
+	table->setColumnCount(int(columnNames.size()));
 	table->horizontalHeader()->setCascadingSectionResizes(false);
 	table->horizontalHeader()->setDefaultSectionSize(50);
 	table->verticalHeader()->setCascadingSectionResizes(true);
@@ -774,20 +812,20 @@ void MainWindow::createTableWidget(QString name,
 
 	mAddrToTableItem.clear();
 
-	for (int i=0; i<rowNames.size(); ++i)
+	for (size_t i=0; i<rowNames.size(); ++i)
 	{
-		table->setVerticalHeaderItem(i, new QTableWidgetItem(rowNames[i], 0));
-		for (int j=0; j<columnNames.size(); ++j)
+		table->setVerticalHeaderItem(int(i), new QTableWidgetItem(rowNames[i], 0));
+		for (size_t j=0; j<columnNames.size(); ++j)
 		{
-			uint16_t addr = baseAddr + j + rowStride * i;
+			uint16_t addr = uint16_t(baseAddr + j + rowStride * i);
 
-			table->setHorizontalHeaderItem(j, new QTableWidgetItem(columnNames[j], 0));
+			table->setHorizontalHeaderItem(int(j), new QTableWidgetItem(columnNames[j], 0));
 			auto item = new QTableWidgetItem(QString::number(0), 0);
 			item->setTextAlignment(Qt::AlignRight);
 			item->setForeground(QColor(255,255,255));
 			item->setData(Qt::UserRole, QVariant(addr));
 			item->setText("--");
-			table->setItem(i, j, item);
+			table->setItem(int(i), int(j), item);
 
 			mAddrToTableItem[addr] = {i, j};
 
@@ -796,7 +834,7 @@ void MainWindow::createTableWidget(QString name,
 	}
 
 	//    ((QGridLayout*)ui->frameForTable->layout())->addWidget(table, 1, 1);
-	((QGridLayout*)ui->frameForTable->layout())->replaceWidget(ui->tableWidget, table);
+	static_cast<QGridLayout*>(ui->frameForTable->layout())->replaceWidget(ui->tableWidget, table);
 	delete ui->tableWidget;
 	ui->tableWidget = table;
 
@@ -828,7 +866,7 @@ void MainWindow::on_actionStart_Log_changed()
 {
 	if (ui->actionStart_Log->isChecked())
 	{
-		mLogger.startLog();
+		mLogger.startLog(mConfig.mOutputDir);
 	}
 	else
 	{
@@ -931,4 +969,35 @@ void MainWindow::on_speedRatioEdit_editingFinished()
 {
 	mConfigData.mSpeedSensorRatio = ui->speedRatioEdit->text().toFloat();
 	fastComWrite({SPEED_RATIO});
+}
+
+void MainWindow::on_actionSetup_triggered()
+{
+	Setting setting(
+				mConfig.mOutputDir,
+				mConfig.mBCPort,
+				mConfig.mMutPort,
+				this);
+	if (setting.exec() == QDialog::Accepted)
+	{
+		mConfig.mOutputDir = setting.getLogDir();
+		mConfig.mBCPort = setting.getBCPort();
+		mConfig.mMutPort = setting.getMUTPort();
+
+		QSettings qs;
+		qs.setValue("logDir", mConfig.mOutputDir);
+		qs.setValue("BCPort", mConfig.mBCPort);
+		qs.setValue("MUTPort", mConfig.mMutPort);
+
+		QDir dir;
+		dir.mkpath(mConfig.mOutputDir);
+
+		ui->comboBox->setCurrentIndex(ui->comboBox->findText(mConfig.mBCPort));
+		ui->portListMut->setCurrentIndex(ui->portListMut->findText(mConfig.mMutPort));
+	}
+}
+
+void MainWindow::on_actionOpen_log_dir_triggered()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(mConfig.mOutputDir));
 }

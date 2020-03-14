@@ -42,6 +42,8 @@ public:
     QAction *actionStart_Log;
     QAction *actionConnect;
     QAction *actionConnectMut;
+    QAction *actionSetup;
+    QAction *actionOpen_log_dir;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QGridLayout *gridLayout;
@@ -61,46 +63,50 @@ public:
     QFrame *frame_2;
     QHBoxLayout *horizontalLayout_5;
     QGridLayout *gridLayout_2;
-    QLineEdit *speedRatioEdit;
-    QFrame *line;
-    QLineEdit *gear1Edit;
-    QLineEdit *baseBoostEdit;
-    QLabel *label_13;
-    QLabel *label_10;
-    QLineEdit *firmwareVersion;
-    QLineEdit *forceWGEdit;
-    QLabel *label_6;
-    QLineEdit *pidPEdit;
-    QLabel *label_8;
     QLineEdit *gear2Edit;
-    QLabel *label_11;
-    QLabel *label_2;
-    QLineEdit *gear3Edit;
-    QLabel *label_7;
-    QLabel *label_17;
-    QLabel *label_4;
-    QLineEdit *gear5Edit;
-    QLabel *label_5;
-    QLabel *label_15;
-    QLabel *label_14;
-    QLabel *label_40;
-    QLabel *label_3;
-    QFrame *line_2;
-    QLineEdit *pidDEdit;
-    QLabel *label_36;
-    QLabel *label_41;
+    QLineEdit *gear4Edit;
+    QFrame *line;
     QLineEdit *tyreCircumEdit;
     QLabel *label_16;
-    QPushButton *buttonOpenMut;
-    QLabel *label;
-    QLineEdit *gear4Edit;
-    QLabel *label_12;
+    QLineEdit *firmwareVersion;
     QPushButton *buttonCloseMut;
     QLabel *label_39;
-    QLabel *label_9;
+    QLabel *label_3;
+    QLabel *label_8;
+    QLabel *label_40;
+    QLineEdit *gear3Edit;
+    QLabel *label_15;
     QLineEdit *pidIEdit;
-    QLineEdit *gear6Edit;
+    QLabel *label_41;
     QComboBox *portListMut;
+    QLabel *label_6;
+    QLabel *label_14;
+    QLineEdit *forceWGEdit;
+    QLabel *label_7;
+    QLabel *label_13;
+    QLineEdit *gear1Edit;
+    QLabel *label_2;
+    QLabel *label;
+    QFrame *line_2;
+    QLabel *label_36;
+    QLabel *label_12;
+    QLabel *label_9;
+    QPushButton *buttonOpenMut;
+    QLabel *label_10;
+    QLineEdit *gear5Edit;
+    QLineEdit *maxThrottleEdit;
+    QLineEdit *speedRatioEdit;
+    QLabel *label_17;
+    QLabel *label_5;
+    QLineEdit *pidPEdit;
+    QLineEdit *gear6Edit;
+    QLabel *label_4;
+    QLabel *label_11;
+    QLineEdit *baseBoostEdit;
+    QLineEdit *pidDEdit;
+    QLabel *label_44;
+    QLabel *label_45;
+    QLabel *label_46;
     QSpacerItem *horizontalSpacer;
     QSpacerItem *verticalSpacer;
     QWidget *tab_3;
@@ -185,6 +191,16 @@ public:
         QIcon icon3;
         icon3.addFile(QString::fromUtf8("MUT.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionConnectMut->setIcon(icon3);
+        actionSetup = new QAction(MainWindow);
+        actionSetup->setObjectName(QString::fromUtf8("actionSetup"));
+        QIcon icon4;
+        icon4.addFile(QString::fromUtf8("config.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionSetup->setIcon(icon4);
+        actionOpen_log_dir = new QAction(MainWindow);
+        actionOpen_log_dir->setObjectName(QString::fromUtf8("actionOpen_log_dir"));
+        QIcon icon5;
+        icon5.addFile(QString::fromUtf8("open_dir.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionOpen_log_dir->setIcon(icon5);
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -238,6 +254,7 @@ public:
         horizontalLayout_4->setContentsMargins(3, 3, 3, 3);
         comboBox = new QComboBox(frame_3);
         comboBox->setObjectName(QString::fromUtf8("comboBox"));
+        comboBox->setEnabled(false);
         QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
@@ -284,14 +301,21 @@ public:
         gridLayout_2 = new QGridLayout();
         gridLayout_2->setSpacing(6);
         gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
-        speedRatioEdit = new QLineEdit(frame_2);
-        speedRatioEdit->setObjectName(QString::fromUtf8("speedRatioEdit"));
+        gear2Edit = new QLineEdit(frame_2);
+        gear2Edit->setObjectName(QString::fromUtf8("gear2Edit"));
         QFont font1;
         font1.setPointSize(12);
-        speedRatioEdit->setFont(font1);
-        speedRatioEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        gear2Edit->setFont(font1);
+        gear2Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
-        gridLayout_2->addWidget(speedRatioEdit, 13, 1, 1, 1);
+        gridLayout_2->addWidget(gear2Edit, 8, 1, 1, 1);
+
+        gear4Edit = new QLineEdit(frame_2);
+        gear4Edit->setObjectName(QString::fromUtf8("gear4Edit"));
+        gear4Edit->setFont(font1);
+        gear4Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(gear4Edit, 10, 1, 1, 1);
 
         line = new QFrame(frame_2);
         line->setObjectName(QString::fromUtf8("line"));
@@ -300,179 +324,13 @@ public:
 
         gridLayout_2->addWidget(line, 15, 0, 1, 6);
 
-        gear1Edit = new QLineEdit(frame_2);
-        gear1Edit->setObjectName(QString::fromUtf8("gear1Edit"));
-        gear1Edit->setFont(font1);
-        gear1Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(gear1Edit, 7, 1, 1, 1);
-
-        baseBoostEdit = new QLineEdit(frame_2);
-        baseBoostEdit->setObjectName(QString::fromUtf8("baseBoostEdit"));
-        baseBoostEdit->setFont(font1);
-        baseBoostEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(baseBoostEdit, 14, 1, 1, 1);
-
-        label_13 = new QLabel(frame_2);
-        label_13->setObjectName(QString::fromUtf8("label_13"));
-
-        gridLayout_2->addWidget(label_13, 14, 2, 1, 1);
-
-        label_10 = new QLabel(frame_2);
-        label_10->setObjectName(QString::fromUtf8("label_10"));
-
-        gridLayout_2->addWidget(label_10, 13, 0, 1, 1);
-
-        firmwareVersion = new QLineEdit(frame_2);
-        firmwareVersion->setObjectName(QString::fromUtf8("firmwareVersion"));
-        firmwareVersion->setFont(font1);
-        firmwareVersion->setInputMethodHints(Qt::ImhFormattedNumbersOnly);
-        firmwareVersion->setReadOnly(true);
-
-        gridLayout_2->addWidget(firmwareVersion, 4, 5, 1, 1);
-
-        forceWGEdit = new QLineEdit(frame_2);
-        forceWGEdit->setObjectName(QString::fromUtf8("forceWGEdit"));
-        forceWGEdit->setFont(font1);
-
-        gridLayout_2->addWidget(forceWGEdit, 12, 5, 1, 1);
-
-        label_6 = new QLabel(frame_2);
-        label_6->setObjectName(QString::fromUtf8("label_6"));
-        label_6->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_6, 9, 0, 1, 1);
-
-        pidPEdit = new QLineEdit(frame_2);
-        pidPEdit->setObjectName(QString::fromUtf8("pidPEdit"));
-        pidPEdit->setFont(font1);
-        pidPEdit->setInputMethodHints(Qt::ImhFormattedNumbersOnly);
-        pidPEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(pidPEdit, 7, 5, 1, 1);
-
-        label_8 = new QLabel(frame_2);
-        label_8->setObjectName(QString::fromUtf8("label_8"));
-        label_8->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_8, 11, 0, 1, 1);
-
-        gear2Edit = new QLineEdit(frame_2);
-        gear2Edit->setObjectName(QString::fromUtf8("gear2Edit"));
-        gear2Edit->setFont(font1);
-        gear2Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(gear2Edit, 8, 1, 1, 1);
-
-        label_11 = new QLabel(frame_2);
-        label_11->setObjectName(QString::fromUtf8("label_11"));
-
-        gridLayout_2->addWidget(label_11, 13, 2, 1, 1);
-
-        label_2 = new QLabel(frame_2);
-        label_2->setObjectName(QString::fromUtf8("label_2"));
-
-        gridLayout_2->addWidget(label_2, 4, 2, 1, 1);
-
-        gear3Edit = new QLineEdit(frame_2);
-        gear3Edit->setObjectName(QString::fromUtf8("gear3Edit"));
-        gear3Edit->setFont(font1);
-        gear3Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(gear3Edit, 9, 1, 1, 1);
-
-        label_7 = new QLabel(frame_2);
-        label_7->setObjectName(QString::fromUtf8("label_7"));
-        label_7->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_7, 10, 0, 1, 1);
-
-        label_17 = new QLabel(frame_2);
-        label_17->setObjectName(QString::fromUtf8("label_17"));
-        label_17->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_17, 9, 4, 1, 1);
-
-        label_4 = new QLabel(frame_2);
-        label_4->setObjectName(QString::fromUtf8("label_4"));
-        label_4->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_4, 7, 0, 1, 1);
-
-        gear5Edit = new QLineEdit(frame_2);
-        gear5Edit->setObjectName(QString::fromUtf8("gear5Edit"));
-        gear5Edit->setFont(font1);
-        gear5Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(gear5Edit, 11, 1, 1, 1);
-
-        label_5 = new QLabel(frame_2);
-        label_5->setObjectName(QString::fromUtf8("label_5"));
-        label_5->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_5, 8, 0, 1, 1);
-
-        label_15 = new QLabel(frame_2);
-        label_15->setObjectName(QString::fromUtf8("label_15"));
-        label_15->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_15, 7, 4, 1, 1);
-
-        label_14 = new QLabel(frame_2);
-        label_14->setObjectName(QString::fromUtf8("label_14"));
-
-        gridLayout_2->addWidget(label_14, 6, 4, 1, 1);
-
-        label_40 = new QLabel(frame_2);
-        label_40->setObjectName(QString::fromUtf8("label_40"));
-        label_40->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_40, 12, 4, 1, 1);
-
-        label_3 = new QLabel(frame_2);
-        label_3->setObjectName(QString::fromUtf8("label_3"));
-
-        gridLayout_2->addWidget(label_3, 6, 0, 1, 1);
-
-        line_2 = new QFrame(frame_2);
-        line_2->setObjectName(QString::fromUtf8("line_2"));
-        QSizePolicy sizePolicy2(QSizePolicy::Fixed, QSizePolicy::Expanding);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(2);
-        sizePolicy2.setHeightForWidth(line_2->sizePolicy().hasHeightForWidth());
-        line_2->setSizePolicy(sizePolicy2);
-        line_2->setMinimumSize(QSize(0, 0));
-        line_2->setLineWidth(1);
-        line_2->setFrameShape(QFrame::VLine);
-        line_2->setFrameShadow(QFrame::Sunken);
-
-        gridLayout_2->addWidget(line_2, 4, 3, 11, 1);
-
-        pidDEdit = new QLineEdit(frame_2);
-        pidDEdit->setObjectName(QString::fromUtf8("pidDEdit"));
-        pidDEdit->setFont(font1);
-        pidDEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(pidDEdit, 9, 5, 1, 1);
-
-        label_36 = new QLabel(frame_2);
-        label_36->setObjectName(QString::fromUtf8("label_36"));
-
-        gridLayout_2->addWidget(label_36, 16, 0, 1, 1);
-
-        label_41 = new QLabel(frame_2);
-        label_41->setObjectName(QString::fromUtf8("label_41"));
-
-        gridLayout_2->addWidget(label_41, 4, 4, 1, 1);
-
         tyreCircumEdit = new QLineEdit(frame_2);
         tyreCircumEdit->setObjectName(QString::fromUtf8("tyreCircumEdit"));
-        QSizePolicy sizePolicy3(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        sizePolicy3.setHorizontalStretch(0);
-        sizePolicy3.setVerticalStretch(0);
-        sizePolicy3.setHeightForWidth(tyreCircumEdit->sizePolicy().hasHeightForWidth());
-        tyreCircumEdit->setSizePolicy(sizePolicy3);
+        QSizePolicy sizePolicy2(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(tyreCircumEdit->sizePolicy().hasHeightForWidth());
+        tyreCircumEdit->setSizePolicy(sizePolicy2);
         tyreCircumEdit->setFont(font1);
         tyreCircumEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
@@ -484,32 +342,13 @@ public:
 
         gridLayout_2->addWidget(label_16, 8, 4, 1, 1);
 
-        buttonOpenMut = new QPushButton(frame_2);
-        buttonOpenMut->setObjectName(QString::fromUtf8("buttonOpenMut"));
-        QSizePolicy sizePolicy4(QSizePolicy::Minimum, QSizePolicy::Maximum);
-        sizePolicy4.setHorizontalStretch(0);
-        sizePolicy4.setVerticalStretch(2);
-        sizePolicy4.setHeightForWidth(buttonOpenMut->sizePolicy().hasHeightForWidth());
-        buttonOpenMut->setSizePolicy(sizePolicy4);
+        firmwareVersion = new QLineEdit(frame_2);
+        firmwareVersion->setObjectName(QString::fromUtf8("firmwareVersion"));
+        firmwareVersion->setFont(font1);
+        firmwareVersion->setInputMethodHints(Qt::ImhFormattedNumbersOnly);
+        firmwareVersion->setReadOnly(true);
 
-        gridLayout_2->addWidget(buttonOpenMut, 16, 4, 2, 1);
-
-        label = new QLabel(frame_2);
-        label->setObjectName(QString::fromUtf8("label"));
-
-        gridLayout_2->addWidget(label, 4, 0, 1, 1);
-
-        gear4Edit = new QLineEdit(frame_2);
-        gear4Edit->setObjectName(QString::fromUtf8("gear4Edit"));
-        gear4Edit->setFont(font1);
-        gear4Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(gear4Edit, 10, 1, 1, 1);
-
-        label_12 = new QLabel(frame_2);
-        label_12->setObjectName(QString::fromUtf8("label_12"));
-
-        gridLayout_2->addWidget(label_12, 14, 0, 1, 1);
+        gridLayout_2->addWidget(firmwareVersion, 4, 5, 1, 1);
 
         buttonCloseMut = new QPushButton(frame_2);
         buttonCloseMut->setObjectName(QString::fromUtf8("buttonCloseMut"));
@@ -519,13 +358,37 @@ public:
         label_39 = new QLabel(frame_2);
         label_39->setObjectName(QString::fromUtf8("label_39"));
 
-        gridLayout_2->addWidget(label_39, 11, 4, 1, 1);
+        gridLayout_2->addWidget(label_39, 12, 4, 1, 1);
 
-        label_9 = new QLabel(frame_2);
-        label_9->setObjectName(QString::fromUtf8("label_9"));
-        label_9->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        label_3 = new QLabel(frame_2);
+        label_3->setObjectName(QString::fromUtf8("label_3"));
 
-        gridLayout_2->addWidget(label_9, 12, 0, 1, 1);
+        gridLayout_2->addWidget(label_3, 6, 0, 1, 1);
+
+        label_8 = new QLabel(frame_2);
+        label_8->setObjectName(QString::fromUtf8("label_8"));
+        label_8->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_8, 11, 0, 1, 1);
+
+        label_40 = new QLabel(frame_2);
+        label_40->setObjectName(QString::fromUtf8("label_40"));
+        label_40->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_40, 13, 4, 1, 1);
+
+        gear3Edit = new QLineEdit(frame_2);
+        gear3Edit->setObjectName(QString::fromUtf8("gear3Edit"));
+        gear3Edit->setFont(font1);
+        gear3Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(gear3Edit, 9, 1, 1, 1);
+
+        label_15 = new QLabel(frame_2);
+        label_15->setObjectName(QString::fromUtf8("label_15"));
+        label_15->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_15, 7, 4, 1, 1);
 
         pidIEdit = new QLineEdit(frame_2);
         pidIEdit->setObjectName(QString::fromUtf8("pidIEdit"));
@@ -534,6 +397,154 @@ public:
 
         gridLayout_2->addWidget(pidIEdit, 8, 5, 1, 1);
 
+        label_41 = new QLabel(frame_2);
+        label_41->setObjectName(QString::fromUtf8("label_41"));
+
+        gridLayout_2->addWidget(label_41, 4, 4, 1, 1);
+
+        portListMut = new QComboBox(frame_2);
+        portListMut->setObjectName(QString::fromUtf8("portListMut"));
+        portListMut->setEnabled(false);
+        QSizePolicy sizePolicy3(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        sizePolicy3.setHorizontalStretch(2);
+        sizePolicy3.setVerticalStretch(0);
+        sizePolicy3.setHeightForWidth(portListMut->sizePolicy().hasHeightForWidth());
+        portListMut->setSizePolicy(sizePolicy3);
+
+        gridLayout_2->addWidget(portListMut, 16, 1, 1, 1);
+
+        label_6 = new QLabel(frame_2);
+        label_6->setObjectName(QString::fromUtf8("label_6"));
+        label_6->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_6, 9, 0, 1, 1);
+
+        label_14 = new QLabel(frame_2);
+        label_14->setObjectName(QString::fromUtf8("label_14"));
+
+        gridLayout_2->addWidget(label_14, 6, 4, 1, 1);
+
+        forceWGEdit = new QLineEdit(frame_2);
+        forceWGEdit->setObjectName(QString::fromUtf8("forceWGEdit"));
+        forceWGEdit->setFont(font1);
+        forceWGEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(forceWGEdit, 13, 5, 1, 1);
+
+        label_7 = new QLabel(frame_2);
+        label_7->setObjectName(QString::fromUtf8("label_7"));
+        label_7->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_7, 10, 0, 1, 1);
+
+        label_13 = new QLabel(frame_2);
+        label_13->setObjectName(QString::fromUtf8("label_13"));
+
+        gridLayout_2->addWidget(label_13, 14, 2, 1, 1);
+
+        gear1Edit = new QLineEdit(frame_2);
+        gear1Edit->setObjectName(QString::fromUtf8("gear1Edit"));
+        gear1Edit->setFont(font1);
+        gear1Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(gear1Edit, 7, 1, 1, 1);
+
+        label_2 = new QLabel(frame_2);
+        label_2->setObjectName(QString::fromUtf8("label_2"));
+
+        gridLayout_2->addWidget(label_2, 4, 2, 1, 1);
+
+        label = new QLabel(frame_2);
+        label->setObjectName(QString::fromUtf8("label"));
+
+        gridLayout_2->addWidget(label, 4, 0, 1, 1);
+
+        line_2 = new QFrame(frame_2);
+        line_2->setObjectName(QString::fromUtf8("line_2"));
+        QSizePolicy sizePolicy4(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        sizePolicy4.setHorizontalStretch(0);
+        sizePolicy4.setVerticalStretch(2);
+        sizePolicy4.setHeightForWidth(line_2->sizePolicy().hasHeightForWidth());
+        line_2->setSizePolicy(sizePolicy4);
+        line_2->setMinimumSize(QSize(0, 0));
+        line_2->setLineWidth(1);
+        line_2->setFrameShape(QFrame::VLine);
+        line_2->setFrameShadow(QFrame::Sunken);
+
+        gridLayout_2->addWidget(line_2, 4, 3, 11, 1);
+
+        label_36 = new QLabel(frame_2);
+        label_36->setObjectName(QString::fromUtf8("label_36"));
+
+        gridLayout_2->addWidget(label_36, 16, 0, 1, 1);
+
+        label_12 = new QLabel(frame_2);
+        label_12->setObjectName(QString::fromUtf8("label_12"));
+
+        gridLayout_2->addWidget(label_12, 14, 0, 1, 1);
+
+        label_9 = new QLabel(frame_2);
+        label_9->setObjectName(QString::fromUtf8("label_9"));
+        label_9->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_9, 12, 0, 1, 1);
+
+        buttonOpenMut = new QPushButton(frame_2);
+        buttonOpenMut->setObjectName(QString::fromUtf8("buttonOpenMut"));
+        QSizePolicy sizePolicy5(QSizePolicy::Minimum, QSizePolicy::Maximum);
+        sizePolicy5.setHorizontalStretch(0);
+        sizePolicy5.setVerticalStretch(2);
+        sizePolicy5.setHeightForWidth(buttonOpenMut->sizePolicy().hasHeightForWidth());
+        buttonOpenMut->setSizePolicy(sizePolicy5);
+
+        gridLayout_2->addWidget(buttonOpenMut, 16, 4, 2, 1);
+
+        label_10 = new QLabel(frame_2);
+        label_10->setObjectName(QString::fromUtf8("label_10"));
+
+        gridLayout_2->addWidget(label_10, 13, 0, 1, 1);
+
+        gear5Edit = new QLineEdit(frame_2);
+        gear5Edit->setObjectName(QString::fromUtf8("gear5Edit"));
+        gear5Edit->setFont(font1);
+        gear5Edit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(gear5Edit, 11, 1, 1, 1);
+
+        maxThrottleEdit = new QLineEdit(frame_2);
+        maxThrottleEdit->setObjectName(QString::fromUtf8("maxThrottleEdit"));
+        maxThrottleEdit->setFont(font1);
+        maxThrottleEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(maxThrottleEdit, 11, 5, 1, 1);
+
+        speedRatioEdit = new QLineEdit(frame_2);
+        speedRatioEdit->setObjectName(QString::fromUtf8("speedRatioEdit"));
+        speedRatioEdit->setFont(font1);
+        speedRatioEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(speedRatioEdit, 13, 1, 1, 1);
+
+        label_17 = new QLabel(frame_2);
+        label_17->setObjectName(QString::fromUtf8("label_17"));
+        label_17->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_17, 9, 4, 1, 1);
+
+        label_5 = new QLabel(frame_2);
+        label_5->setObjectName(QString::fromUtf8("label_5"));
+        label_5->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_5, 8, 0, 1, 1);
+
+        pidPEdit = new QLineEdit(frame_2);
+        pidPEdit->setObjectName(QString::fromUtf8("pidPEdit"));
+        pidPEdit->setFont(font1);
+        pidPEdit->setInputMethodHints(Qt::ImhFormattedNumbersOnly);
+        pidPEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(pidPEdit, 7, 5, 1, 1);
+
         gear6Edit = new QLineEdit(frame_2);
         gear6Edit->setObjectName(QString::fromUtf8("gear6Edit"));
         gear6Edit->setFont(font1);
@@ -541,15 +552,45 @@ public:
 
         gridLayout_2->addWidget(gear6Edit, 12, 1, 1, 1);
 
-        portListMut = new QComboBox(frame_2);
-        portListMut->setObjectName(QString::fromUtf8("portListMut"));
-        QSizePolicy sizePolicy5(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        sizePolicy5.setHorizontalStretch(2);
-        sizePolicy5.setVerticalStretch(0);
-        sizePolicy5.setHeightForWidth(portListMut->sizePolicy().hasHeightForWidth());
-        portListMut->setSizePolicy(sizePolicy5);
+        label_4 = new QLabel(frame_2);
+        label_4->setObjectName(QString::fromUtf8("label_4"));
+        label_4->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
-        gridLayout_2->addWidget(portListMut, 16, 1, 1, 1);
+        gridLayout_2->addWidget(label_4, 7, 0, 1, 1);
+
+        label_11 = new QLabel(frame_2);
+        label_11->setObjectName(QString::fromUtf8("label_11"));
+
+        gridLayout_2->addWidget(label_11, 13, 2, 1, 1);
+
+        baseBoostEdit = new QLineEdit(frame_2);
+        baseBoostEdit->setObjectName(QString::fromUtf8("baseBoostEdit"));
+        baseBoostEdit->setFont(font1);
+        baseBoostEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(baseBoostEdit, 14, 1, 1, 1);
+
+        pidDEdit = new QLineEdit(frame_2);
+        pidDEdit->setObjectName(QString::fromUtf8("pidDEdit"));
+        pidDEdit->setFont(font1);
+        pidDEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(pidDEdit, 9, 5, 1, 1);
+
+        label_44 = new QLabel(frame_2);
+        label_44->setObjectName(QString::fromUtf8("label_44"));
+
+        gridLayout_2->addWidget(label_44, 11, 4, 1, 1);
+
+        label_45 = new QLabel(frame_2);
+        label_45->setObjectName(QString::fromUtf8("label_45"));
+
+        gridLayout_2->addWidget(label_45, 11, 6, 1, 1);
+
+        label_46 = new QLabel(frame_2);
+        label_46->setObjectName(QString::fromUtf8("label_46"));
+
+        gridLayout_2->addWidget(label_46, 13, 6, 1, 1);
 
 
         horizontalLayout_5->addLayout(gridLayout_2);
@@ -1014,7 +1055,7 @@ public:
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 965, 21));
+        menuBar->setGeometry(QRect(0, 0, 965, 22));
         MainWindow->setMenuBar(menuBar);
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
@@ -1046,6 +1087,9 @@ public:
         toolBar->addAction(actionStart_Log);
         toolBar->addAction(actionConnect);
         toolBar->addAction(actionConnectMut);
+        toolBar->addAction(actionOpen_log_dir);
+        toolBar->addSeparator();
+        toolBar->addAction(actionSetup);
 
         retranslateUi(MainWindow);
         QObject::connect(reloadButton, SIGNAL(clicked()), MainWindow, SLOT(reloadConfig()));
@@ -1070,51 +1114,72 @@ public:
         actionConnect->setShortcut(QApplication::translate("MainWindow", "F2", nullptr));
 #endif // QT_NO_SHORTCUT
         actionConnectMut->setText(QApplication::translate("MainWindow", "ConnectMut", nullptr));
+#ifndef QT_NO_TOOLTIP
+        actionConnectMut->setToolTip(QApplication::translate("MainWindow", "Connect MUT logger", nullptr));
+#endif // QT_NO_TOOLTIP
 #ifndef QT_NO_SHORTCUT
         actionConnectMut->setShortcut(QApplication::translate("MainWindow", "F3", nullptr));
+#endif // QT_NO_SHORTCUT
+        actionSetup->setText(QApplication::translate("MainWindow", "Setup", nullptr));
+#ifndef QT_NO_TOOLTIP
+        actionSetup->setToolTip(QApplication::translate("MainWindow", "Setup", nullptr));
+#endif // QT_NO_TOOLTIP
+#ifndef QT_NO_SHORTCUT
+        actionSetup->setShortcut(QApplication::translate("MainWindow", "F5", nullptr));
+#endif // QT_NO_SHORTCUT
+        actionOpen_log_dir->setText(QApplication::translate("MainWindow", "Open log dir", nullptr));
+#ifndef QT_NO_TOOLTIP
+        actionOpen_log_dir->setToolTip(QApplication::translate("MainWindow", "Open log directory", nullptr));
+#endif // QT_NO_TOOLTIP
+#ifndef QT_NO_SHORTCUT
+        actionOpen_log_dir->setShortcut(QApplication::translate("MainWindow", "F4", nullptr));
 #endif // QT_NO_SHORTCUT
         label_38->setText(QApplication::translate("MainWindow", "Comm port", nullptr));
         openButton->setText(QApplication::translate("MainWindow", "OPEN", nullptr));
         closeButton->setText(QApplication::translate("MainWindow", "CLOSE", nullptr));
         reloadButton->setText(QApplication::translate("MainWindow", "Reload", nullptr));
-        speedRatioEdit->setInputMask(QString());
-        gear1Edit->setInputMask(QString());
-        baseBoostEdit->setInputMask(QString());
-        label_13->setText(QApplication::translate("MainWindow", "BAR", nullptr));
-        label_10->setText(QApplication::translate("MainWindow", "Speed sensor", nullptr));
-        firmwareVersion->setInputMask(QString());
-        forceWGEdit->setInputMask(QString());
-        forceWGEdit->setText(QApplication::translate("MainWindow", "0", nullptr));
-        label_6->setText(QApplication::translate("MainWindow", "3rd gear", nullptr));
-        pidPEdit->setInputMask(QString());
-        label_8->setText(QApplication::translate("MainWindow", "5th gear", nullptr));
         gear2Edit->setInputMask(QString());
-        label_11->setText(QApplication::translate("MainWindow", "Hz/km/h", nullptr));
-        label_2->setText(QApplication::translate("MainWindow", "m", nullptr));
-        gear3Edit->setInputMask(QString());
-        label_7->setText(QApplication::translate("MainWindow", "4th gear", nullptr));
-        label_17->setText(QApplication::translate("MainWindow", "D", nullptr));
-        label_4->setText(QApplication::translate("MainWindow", "1st gear", nullptr));
-        gear5Edit->setInputMask(QString());
-        label_5->setText(QApplication::translate("MainWindow", "2nd gear", nullptr));
-        label_15->setText(QApplication::translate("MainWindow", "P", nullptr));
-        label_14->setText(QApplication::translate("MainWindow", "PID", nullptr));
-        label_40->setText(QApplication::translate("MainWindow", "Force Waste Gate", nullptr));
-        label_3->setText(QApplication::translate("MainWindow", "Gear Ratio", nullptr));
-        pidDEdit->setInputMask(QString());
-        label_36->setText(QApplication::translate("MainWindow", "MUT Port", nullptr));
-        label_41->setText(QApplication::translate("MainWindow", "Firmware Version", nullptr));
+        gear4Edit->setInputMask(QString());
         tyreCircumEdit->setInputMask(QString());
         label_16->setText(QApplication::translate("MainWindow", "I", nullptr));
-        buttonOpenMut->setText(QApplication::translate("MainWindow", "OPEN ", nullptr));
-        label->setText(QApplication::translate("MainWindow", "Tyre Circumference", nullptr));
-        gear4Edit->setInputMask(QString());
-        label_12->setText(QApplication::translate("MainWindow", "Base target boost", nullptr));
+        firmwareVersion->setInputMask(QString());
         buttonCloseMut->setText(QApplication::translate("MainWindow", "CLOSE", nullptr));
         label_39->setText(QApplication::translate("MainWindow", "Simulation", nullptr));
-        label_9->setText(QApplication::translate("MainWindow", "6th gear", nullptr));
+        label_3->setText(QApplication::translate("MainWindow", "Gear Ratio", nullptr));
+        label_8->setText(QApplication::translate("MainWindow", "5th gear", nullptr));
+        label_40->setText(QApplication::translate("MainWindow", "Force Waste Gate", nullptr));
+        gear3Edit->setInputMask(QString());
+        label_15->setText(QApplication::translate("MainWindow", "P", nullptr));
         pidIEdit->setInputMask(QString());
+        label_41->setText(QApplication::translate("MainWindow", "Firmware Version", nullptr));
+        label_6->setText(QApplication::translate("MainWindow", "3rd gear", nullptr));
+        label_14->setText(QApplication::translate("MainWindow", "PID", nullptr));
+        forceWGEdit->setInputMask(QString());
+        forceWGEdit->setText(QApplication::translate("MainWindow", "0", nullptr));
+        label_7->setText(QApplication::translate("MainWindow", "4th gear", nullptr));
+        label_13->setText(QApplication::translate("MainWindow", "BAR", nullptr));
+        gear1Edit->setInputMask(QString());
+        label_2->setText(QApplication::translate("MainWindow", "m", nullptr));
+        label->setText(QApplication::translate("MainWindow", "Tyre Circumference", nullptr));
+        label_36->setText(QApplication::translate("MainWindow", "MUT Port", nullptr));
+        label_12->setText(QApplication::translate("MainWindow", "Base target boost", nullptr));
+        label_9->setText(QApplication::translate("MainWindow", "6th gear", nullptr));
+        buttonOpenMut->setText(QApplication::translate("MainWindow", "OPEN ", nullptr));
+        label_10->setText(QApplication::translate("MainWindow", "Speed sensor", nullptr));
+        gear5Edit->setInputMask(QString());
+        maxThrottleEdit->setInputMask(QString());
+        speedRatioEdit->setInputMask(QString());
+        label_17->setText(QApplication::translate("MainWindow", "D", nullptr));
+        label_5->setText(QApplication::translate("MainWindow", "2nd gear", nullptr));
+        pidPEdit->setInputMask(QString());
         gear6Edit->setInputMask(QString());
+        label_4->setText(QApplication::translate("MainWindow", "1st gear", nullptr));
+        label_11->setText(QApplication::translate("MainWindow", "Hz/km/h", nullptr));
+        baseBoostEdit->setInputMask(QString());
+        pidDEdit->setInputMask(QString());
+        label_44->setText(QApplication::translate("MainWindow", "Max throttle", nullptr));
+        label_45->setText(QApplication::translate("MainWindow", "%", nullptr));
+        label_46->setText(QApplication::translate("MainWindow", "%", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("MainWindow", "Configuration", nullptr));
         tableColumnLabel->setText(QApplication::translate("MainWindow", "GEAR", nullptr));
         tableRowLabel->setText(QApplication::translate("MainWindow", "RPM", nullptr));

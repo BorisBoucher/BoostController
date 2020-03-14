@@ -28,7 +28,7 @@ public:
 
 //	void setPlotter(IPlotter* plotter):
 
-	void startLog();
+	void startLog(const QString& logDir);
 	void stopLog();
 	bool isStarted();
 

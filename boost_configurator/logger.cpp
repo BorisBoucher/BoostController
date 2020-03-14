@@ -7,14 +7,14 @@ Logger::Logger(QObject *parent) : QObject(parent)
 
 }
 
-void Logger::startLog()
+void Logger::startLog(const QString& logDir)
 {
 	stopLog();
 
 	// Compute log file name
 	QDateTime now = QDateTime::currentDateTime();
 
-	mFileName = "Log_" + now.toString("yyyy.MM.dd_hh.mm.ss") + ".csv";
+	mFileName = logDir + "/Log_" + now.toString("yyyy.MM.dd_hh.mm.ss") + ".csv";
 
 	mLogFile.setFileName(mFileName);
 	mLogFile.open(QIODevice::WriteOnly);

@@ -33,6 +33,8 @@ enum BC_ADDR
 	VERSION_MAJOR =		0x058,
 	VERSION_MINOR =		0x059,
 
+	MAX_THROTTLE =		0x05a,
+
 	TYRE_CIRC =			0x800,
 	GEAR_RATIO_1 =		0x801,		// 6 values
 	GEAR_RATIO_2 =		0x802,		// 6 values
@@ -70,6 +72,9 @@ struct ConfigData
     uint8_t  mBoostTable[6][7];
 	uint8_t  mThrottleTable[6];
 	uint8_t  mThrottleDerivTable[7];
+
+	// Throttle max value calibrarion (%)
+	uint8_t  mMaxThrottle;
 };
 
 struct Measures
