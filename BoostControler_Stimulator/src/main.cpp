@@ -37,7 +37,8 @@ void setup() {
   Serial.begin(1953);
 }
 
-void loop() {
+void loop() 
+{
   uint32_t now = micros();
 
   if (now - gState.mLastInputCheck > 100000)

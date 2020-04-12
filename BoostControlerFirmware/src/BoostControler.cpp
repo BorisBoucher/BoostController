@@ -70,6 +70,8 @@
   
   Throttle position is captured on an analog input. A little filtering may be needed to 
   denoise the signal.
+
+  Fuel pump is captured on an analog input.
   
   Gear table
   ----------
@@ -223,6 +225,7 @@
 	0x059	u8			1		Firmware minor version
 	
 	0x05a	u8			1		Throttle Max calibration to allow 100% scale even if sensor report only 95%. 0..100 
+	0x05b	u8			50		Fuel presssure, bar, 0..5,12
 
 0x200 - 0x3ff	2048 16 bits words
 
@@ -298,6 +301,7 @@ FilterOnePole gAirflowLPF(LOWPASS, 5.0f );
 //#define THROTTLE_IN A7	
 #define MAP_IN A5    
 #define THROTTLE_IN A6  
+#define FUEL_PRESS_IN A7  
 
 // Debug PIN
 #define SPEED_OUT 16
@@ -363,7 +367,7 @@ struct Config0
 		0, 0, 0, 100, 110, 120, 130
 	};
   
-	// Boost reference for boost table, relative presure
+	// Boost reference for boost table, relative pressure
 	float	boostReference = 0.7f;
 	
 	// Duty cycle table in function of boost vs engine load
@@ -401,6 +405,8 @@ struct Measurement
 	float	SPEED = 0.0f;
 	// MAP in Bar  
 	float	MAP = 0.0f;
+	// Fuel pressure in BAR
+	float 	FUEL_PRESS = 0.0f;
 	// Throttle in % (0..100)
 	float	THROTTLE = 0.0f;
 	// Throttle deriv in %/s (-1000..1000%/s)
@@ -704,9 +710,11 @@ void evalCycle()
 	uint32_t now = micros();
   
 	// Analog read : very costly when done without interrupt : 100µs per read !
-	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric presure)...
+	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
 	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
 
+	// Read Fuel pressure. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
+	gMeasures.FUEL_PRESS = analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f);
 
 	// Throttle analog read. 0..100% => 0..5V
 	gMeasures.THROTTLE = analogRead(THROTTLE_IN) * (100.0f / 1023.f);
@@ -1003,6 +1011,8 @@ private:
 			return gMeasures.TARGET_BOOST;
 		case 0x007:
 			return gMeasures.TARGET_OUTPUT;
+		case 0x05b:
+			return gMeasures.FUEL_PRESS;
 		case 0x800:
 			return gConfig.tyreCircum;
 		case 0x801:
@@ -1108,6 +1118,7 @@ private:
 		{false,  0x058, 1.0f, false, false},	// Version major
 		{false,  0x059, 1.0f, false, false},	// Version minor
 		{false,  0x05a, 1.0f, false, true},		// Throttle sensor adjust
+		{true,   0x05b, 50.0f, false, false},	// Fuel pressure
 	};
 
 	static const constexpr Accessor mWordAccessors[] =
@@ -1157,8 +1168,7 @@ private:
 			else
 			{
 				return uint8_t(constrain(getByteParam(accessor.mAddr) * accessor.mFactor, 0, 255));
-			}
-			
+			}		
 		}
 	}
 
@@ -1175,7 +1185,6 @@ private:
 			{
 				getFloatParam(accessor.mAddr) = value / accessor.mFactor;
 			}
-			
 		}
 		else
 		{
@@ -1209,7 +1218,6 @@ private:
 			{
 				return static_cast<uint16_t>(constrain(getFloatParam(accessor.mAddr) * accessor.mFactor, 0, 65535));
 			}
-			
 		}
 		else
 		{
@@ -1237,7 +1245,6 @@ private:
 			{
 				getFloatParam(accessor.mAddr) = value / accessor.mFactor;
 			}
-			
 		}
 		else
 		{
