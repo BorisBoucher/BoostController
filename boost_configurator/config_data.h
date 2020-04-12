@@ -35,6 +35,8 @@ enum BC_ADDR
 
 	MAX_THROTTLE =		0x05a,
 
+	FUEL_PRESSURE =		0x05b,
+
 	TYRE_CIRC =			0x800,
 	GEAR_RATIO_1 =		0x801,		// 6 values
 	GEAR_RATIO_2 =		0x802,		// 6 values
@@ -84,7 +86,9 @@ struct Measures
     float	mSpeed = 0.0f;
     // MAP in Bar
     float	mMAP = 0.0f;
-    // Throttle in % (0..100)
+	// FUEL PRESSURE in Bar
+	float	mFUEL_PRESSURE = 0.0f;
+	// Throttle in % (0..100)
     float	mThrottle = 0.0f;
     // Throttle deriv in %/s (-1000..1000%/s)
     float	mThrottleDeriv = 0.0f;

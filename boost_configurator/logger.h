@@ -41,6 +41,7 @@ public:
 			float*	fuelTrimLow,
 			float*	fuelTrimMid,
 			float*	fuelTrimHigh,
+			float*	fuelPressure,
 			float*	MAP,
 			float*	targetBoost,
 			float*	solDC,

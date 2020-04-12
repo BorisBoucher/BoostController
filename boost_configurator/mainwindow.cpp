@@ -304,33 +304,35 @@ void MainWindow::initAccessors()
 	// Scalar data
 	addAccessors(
 	{
-					//   float? addr   factor signed? offset
-					{true,  MAP,           50.0f, false, measureOffset(mMAP)			},	// MAP
-					{true,  THROTTLE,       1.0f, false, measureOffset(mThrottle)		},	// Throttle
-					{true,  WGDC,           1.0f, false, measureOffset(mSolDC)			},	// WFDC
-					{false, GEAR,           1.0f, false, measureOffset(mGear)			},	// Gear
-					{true,  ENG_LOAD,       1.0f, false, measureOffset(mLoad)			},	// Engine load
-					{true,  CPU_LOAD,       1.0f, false, measureOffset(mCPULoad)		},	// CPU load
-					{true,  TARGET_BOOST,  50.0f, false, measureOffset(mTargetBoost)	},	// Target boost
-					{true,  TARGET_OUTPUT, 50.0f, false, measureOffset(mTargetOutput)},	// Target output
+		//   float? addr   factor signed? offset
+		{true,  MAP,           50.0f, false, measureOffset(mMAP)			},	// MAP
+		{true,  THROTTLE,       1.0f, false, measureOffset(mThrottle)		},	// Throttle
+		{true,  WGDC,           1.0f, false, measureOffset(mSolDC)			},	// WFDC
+		{false, GEAR,           1.0f, false, measureOffset(mGear)			},	// Gear
+		{true,  ENG_LOAD,       1.0f, false, measureOffset(mLoad)			},	// Engine load
+		{true,  CPU_LOAD,       1.0f, false, measureOffset(mCPULoad)		},	// CPU load
+		{true,  TARGET_BOOST,  50.0f, false, measureOffset(mTargetBoost)	},	// Target boost
+		{true,  TARGET_OUTPUT, 50.0f, false, measureOffset(mTargetOutput)},	// Target output
 
-					{false,  WGDC_TEST,      1.0f, false, simulationOffset(mForceWG)		},	// Force WG DC
+		{false,  WGDC_TEST,      1.0f, false, simulationOffset(mForceWG)		},	// Force WG DC
 
-					{false,  VERSION_MAJOR,  1.0f, false, configOffset(mVersionMajor)	},	// FW version major
-					{false,  VERSION_MINOR,  1.0f, false, configOffset(mVersionMinor)	},	// FW version minor
+		{false,  VERSION_MAJOR,  1.0f, false, configOffset(mVersionMajor)	},	// FW version major
+		{false,  VERSION_MINOR,  1.0f, false, configOffset(mVersionMinor)	},	// FW version minor
 
-					{true,  TYRE_CIRC,      1000.0f, false, configOffset(mTyreSize)		},	// Tyre circ
-					{true,  SPEED_RATIO,    1000.0f, false, configOffset(mSpeedSensorRatio)},
-					{true,  REF_BOOST,      1000.0f, false, configOffset(mReferenceBoost)	},
-					{true,  PID_P,          1000.0f, false, configOffset(mPidP)			},
-					{true,  PID_I,          1000.0f, false, configOffset(mPidI)			},
-					{true,  PID_D,          1000.0f, false, configOffset(mPidD)			},
-					{true,  RPM,               1.0f, false, measureOffset(mRPM)			},
-					{true,  SPEED,             1.0f, false, measureOffset(mSpeed)		},
-					{true,  THROTTLE_DERIV,    1.0f, true,  measureOffset(mThrottleDeriv)},
-					{true,  AIR_FLOW,          1.0f, false, measureOffset(mAirFlow)		},
-					{false, MAX_THROTTLE,      1.0f, false, configOffset(mMaxThrottle)	},
-				});
+		{true,  FUEL_PRESSURE,  50.0f, false, measureOffset(mFUEL_PRESSURE)	},	// Fuel Pressure
+
+		{true,  TYRE_CIRC,      1000.0f, false, configOffset(mTyreSize)		},	// Tyre circ
+		{true,  SPEED_RATIO,    1000.0f, false, configOffset(mSpeedSensorRatio)},
+		{true,  REF_BOOST,      1000.0f, false, configOffset(mReferenceBoost)	},
+		{true,  PID_P,          1000.0f, false, configOffset(mPidP)			},
+		{true,  PID_I,          1000.0f, false, configOffset(mPidI)			},
+		{true,  PID_D,          1000.0f, false, configOffset(mPidD)			},
+		{true,  RPM,               1.0f, false, measureOffset(mRPM)			},
+		{true,  SPEED,             1.0f, false, measureOffset(mSpeed)		},
+		{true,  THROTTLE_DERIV,    1.0f, true,  measureOffset(mThrottleDeriv)},
+		{true,  AIR_FLOW,          1.0f, false, measureOffset(mAirFlow)		},
+		{false, MAX_THROTTLE,      1.0f, false, configOffset(mMaxThrottle)	},
+	});
 
 	// Tables
 	// -----------------
@@ -455,6 +457,7 @@ void MainWindow::update()
 				mutOpen ? &mutData.mFuelTrimLow : nullptr,
 				mutOpen ? &mutData.mFuelTrimMid : nullptr,
 				mutOpen ? &mutData.mFuelTrimHigh : nullptr,
+				&mMeasures.mFUEL_PRESSURE,
 				&mMeasures.mMAP,
 				&mMeasures.mTargetBoost,
 				&mMeasures.mSolDC,
@@ -473,7 +476,7 @@ void MainWindow::reloadConfig()
 {
 	// read all configuration data from controler
 	readFastCom(
-	{
+				{
 					VERSION_MAJOR,
 					VERSION_MINOR,
 					TYRE_CIRC,
@@ -527,6 +530,7 @@ void MainWindow::connectPort()
 					{RPM,            4},
 					{SPEED,          4},
 					{MAP,            1},
+					{FUEL_PRESSURE,  1},
 					{THROTTLE,       1},
 					{WGDC,           1},
 					{GEAR,           8},
@@ -558,9 +562,9 @@ void MainWindow::notifyReads(const std::set<uint16_t>& addrs)
 	auto setVersion = [&]()
 	{
 		ui->firmwareVersion->setText(
-					QString::number((int)this->mConfigData.mVersionMajor)
+					QString::number(static_cast<int>(this->mConfigData.mVersionMajor))
 					+ "."
-					+ QString::number((int)this->mConfigData.mVersionMinor));
+					+ QString::number(static_cast<int>(this->mConfigData.mVersionMinor)));
 	};
 
 	for (auto addr : addrs)
@@ -612,6 +616,9 @@ void MainWindow::notifyReads(const std::set<uint16_t>& addrs)
 			break;
 		case MAP:
 			ui->mapEdit->setText(QString::number(double(mMeasures.mMAP-1.0f), 'f', 2));
+			break;
+		case FUEL_PRESSURE:
+			ui->fuelPressEdit->setText(QString::number(double(mMeasures.mFUEL_PRESSURE-1.0f), 'f', 2));
 			break;
 		case THROTTLE:
 		{

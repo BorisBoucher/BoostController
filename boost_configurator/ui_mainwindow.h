@@ -123,40 +123,43 @@ public:
     QHBoxLayout *horizontalLayout;
     QFrame *frame;
     QGridLayout *gridLayout_5;
-    QLineEdit *speedEdit;
-    QLabel *label_26;
-    QLineEdit *targetBoostEdit;
-    QLabel *label_32;
-    QLabel *label_21;
-    QLineEdit *solDcEdit;
     QLabel *label_37;
-    QLabel *label_34;
-    QLabel *label_42;
-    QLabel *label_33;
-    QLabel *label_18;
-    QLabel *label_25;
-    QLabel *label_27;
-    QLineEdit *targetOutputEdit;
-    QLabel *label_31;
-    QLabel *label_30;
-    QSpacerItem *verticalSpacer_2;
-    QLineEdit *throttleEdit;
-    QLineEdit *mapEdit;
-    QLineEdit *gearEdit;
-    QLabel *label_23;
-    QLabel *label_35;
     QLabel *label_24;
-    QLabel *label_29;
-    QLineEdit *loadEdit;
-    QLabel *label_28;
-    QLabel *label_22;
-    QLabel *label_20;
-    QLineEdit *rpmEdit;
+    QLabel *label_30;
     QLineEdit *knockSum;
+    QLineEdit *targetOutputEdit;
+    QLabel *label_29;
+    QLineEdit *rpmEdit;
+    QLabel *label_21;
+    QLabel *label_32;
+    QLabel *label_20;
+    QLabel *label_28;
+    QLabel *label_31;
+    QLineEdit *gearEdit;
+    QLabel *label_47;
+    QLabel *label_23;
+    QLineEdit *targetBoostEdit;
+    QLabel *label_33;
+    QLabel *label_34;
+    QLabel *label_27;
+    QLineEdit *solDcEdit;
+    QLabel *label_43;
+    QLabel *label_26;
     QLabel *label_19;
     QLineEdit *cpuLoadEdit;
+    QLineEdit *throttleEdit;
     QLineEdit *airFlowEdit;
-    QLabel *label_43;
+    QLabel *label_42;
+    QLabel *label_25;
+    QLineEdit *loadEdit;
+    QLabel *label_18;
+    QLineEdit *mapEdit;
+    QLabel *label_22;
+    QLineEdit *speedEdit;
+    QSpacerItem *verticalSpacer_2;
+    QLabel *label_35;
+    QLineEdit *fuelPressEdit;
+    QLabel *label_48;
     QVBoxLayout *verticalLayout;
     QCustomPlot *plot1;
     QCustomPlot *plot2;
@@ -254,7 +257,7 @@ public:
         horizontalLayout_4->setContentsMargins(3, 3, 3, 3);
         comboBox = new QComboBox(frame_3);
         comboBox->setObjectName(QString::fromUtf8("comboBox"));
-        comboBox->setEnabled(false);
+        comboBox->setEnabled(true);
         QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Fixed);
         sizePolicy1.setHorizontalStretch(0);
         sizePolicy1.setVerticalStretch(0);
@@ -710,122 +713,49 @@ public:
         gridLayout_5->setContentsMargins(11, 11, 11, 11);
         gridLayout_5->setObjectName(QString::fromUtf8("gridLayout_5"));
         gridLayout_5->setSizeConstraint(QLayout::SetDefaultConstraint);
-        speedEdit = new QLineEdit(frame);
-        speedEdit->setObjectName(QString::fromUtf8("speedEdit"));
-        QSizePolicy sizePolicy10(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        sizePolicy10.setHorizontalStretch(0);
-        sizePolicy10.setVerticalStretch(0);
-        sizePolicy10.setHeightForWidth(speedEdit->sizePolicy().hasHeightForWidth());
-        speedEdit->setSizePolicy(sizePolicy10);
-        speedEdit->setMinimumSize(QSize(0, 0));
-        speedEdit->setMaximumSize(QSize(80, 16777215));
-        speedEdit->setSizeIncrement(QSize(0, 0));
-        speedEdit->setBaseSize(QSize(0, 0));
-        speedEdit->setFont(font1);
-        speedEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        speedEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        speedEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(speedEdit, 2, 2, 1, 1);
-
-        label_26 = new QLabel(frame);
-        label_26->setObjectName(QString::fromUtf8("label_26"));
-        QSizePolicy sizePolicy11(QSizePolicy::Minimum, QSizePolicy::Preferred);
-        sizePolicy11.setHorizontalStretch(0);
-        sizePolicy11.setVerticalStretch(0);
-        sizePolicy11.setHeightForWidth(label_26->sizePolicy().hasHeightForWidth());
-        label_26->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_26, 5, 3, 1, 1);
-
-        targetBoostEdit = new QLineEdit(frame);
-        targetBoostEdit->setObjectName(QString::fromUtf8("targetBoostEdit"));
-        sizePolicy10.setHeightForWidth(targetBoostEdit->sizePolicy().hasHeightForWidth());
-        targetBoostEdit->setSizePolicy(sizePolicy10);
-        targetBoostEdit->setMaximumSize(QSize(80, 16777215));
-        targetBoostEdit->setBaseSize(QSize(0, 0));
-        QFont font4;
-        font4.setPointSize(20);
-        font4.setBold(true);
-        font4.setWeight(75);
-        targetBoostEdit->setFont(font4);
-        targetBoostEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        targetBoostEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(targetBoostEdit, 8, 2, 1, 1);
-
-        label_32 = new QLabel(frame);
-        label_32->setObjectName(QString::fromUtf8("label_32"));
-
-        gridLayout_5->addWidget(label_32, 8, 0, 1, 1);
-
-        label_21 = new QLabel(frame);
-        label_21->setObjectName(QString::fromUtf8("label_21"));
-        sizePolicy11.setHeightForWidth(label_21->sizePolicy().hasHeightForWidth());
-        label_21->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_21, 7, 0, 1, 1);
-
-        solDcEdit = new QLineEdit(frame);
-        solDcEdit->setObjectName(QString::fromUtf8("solDcEdit"));
-        sizePolicy10.setHeightForWidth(solDcEdit->sizePolicy().hasHeightForWidth());
-        solDcEdit->setSizePolicy(sizePolicy10);
-        solDcEdit->setMinimumSize(QSize(0, 0));
-        solDcEdit->setMaximumSize(QSize(80, 16777215));
-        solDcEdit->setSizeIncrement(QSize(0, 0));
-        solDcEdit->setBaseSize(QSize(0, 0));
-        solDcEdit->setFont(font1);
-        solDcEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        solDcEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        solDcEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(solDcEdit, 5, 2, 1, 1);
-
         label_37 = new QLabel(frame);
         label_37->setObjectName(QString::fromUtf8("label_37"));
 
         gridLayout_5->addWidget(label_37, 11, 0, 1, 1);
 
-        label_34 = new QLabel(frame);
-        label_34->setObjectName(QString::fromUtf8("label_34"));
+        label_24 = new QLabel(frame);
+        label_24->setObjectName(QString::fromUtf8("label_24"));
+        QSizePolicy sizePolicy10(QSizePolicy::Minimum, QSizePolicy::Preferred);
+        sizePolicy10.setHorizontalStretch(0);
+        sizePolicy10.setVerticalStretch(0);
+        sizePolicy10.setHeightForWidth(label_24->sizePolicy().hasHeightForWidth());
+        label_24->setSizePolicy(sizePolicy10);
 
-        gridLayout_5->addWidget(label_34, 9, 0, 1, 1);
+        gridLayout_5->addWidget(label_24, 3, 3, 1, 1);
 
-        label_42 = new QLabel(frame);
-        label_42->setObjectName(QString::fromUtf8("label_42"));
+        label_30 = new QLabel(frame);
+        label_30->setObjectName(QString::fromUtf8("label_30"));
 
-        gridLayout_5->addWidget(label_42, 13, 0, 1, 1);
+        gridLayout_5->addWidget(label_30, 6, 0, 1, 1);
 
-        label_33 = new QLabel(frame);
-        label_33->setObjectName(QString::fromUtf8("label_33"));
+        knockSum = new QLineEdit(frame);
+        knockSum->setObjectName(QString::fromUtf8("knockSum"));
+        QSizePolicy sizePolicy11(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        sizePolicy11.setHorizontalStretch(0);
+        sizePolicy11.setVerticalStretch(0);
+        sizePolicy11.setHeightForWidth(knockSum->sizePolicy().hasHeightForWidth());
+        knockSum->setSizePolicy(sizePolicy11);
+        knockSum->setMaximumSize(QSize(80, 16777215));
+        knockSum->setBaseSize(QSize(0, 0));
+        QFont font4;
+        font4.setPointSize(20);
+        font4.setBold(true);
+        font4.setWeight(75);
+        knockSum->setFont(font4);
+        knockSum->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        knockSum->setReadOnly(true);
 
-        gridLayout_5->addWidget(label_33, 8, 3, 1, 1);
-
-        label_18 = new QLabel(frame);
-        label_18->setObjectName(QString::fromUtf8("label_18"));
-        sizePolicy11.setHeightForWidth(label_18->sizePolicy().hasHeightForWidth());
-        label_18->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_18, 0, 0, 1, 1);
-
-        label_25 = new QLabel(frame);
-        label_25->setObjectName(QString::fromUtf8("label_25"));
-        sizePolicy11.setHeightForWidth(label_25->sizePolicy().hasHeightForWidth());
-        label_25->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_25, 5, 0, 1, 1);
-
-        label_27 = new QLabel(frame);
-        label_27->setObjectName(QString::fromUtf8("label_27"));
-        sizePolicy11.setHeightForWidth(label_27->sizePolicy().hasHeightForWidth());
-        label_27->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_27, 4, 0, 1, 1);
+        gridLayout_5->addWidget(knockSum, 6, 2, 1, 1);
 
         targetOutputEdit = new QLineEdit(frame);
         targetOutputEdit->setObjectName(QString::fromUtf8("targetOutputEdit"));
-        sizePolicy10.setHeightForWidth(targetOutputEdit->sizePolicy().hasHeightForWidth());
-        targetOutputEdit->setSizePolicy(sizePolicy10);
+        sizePolicy11.setHeightForWidth(targetOutputEdit->sizePolicy().hasHeightForWidth());
+        targetOutputEdit->setSizePolicy(sizePolicy11);
         targetOutputEdit->setMaximumSize(QSize(80, 16777215));
         targetOutputEdit->setBaseSize(QSize(0, 0));
         targetOutputEdit->setFont(font1);
@@ -834,131 +764,17 @@ public:
 
         gridLayout_5->addWidget(targetOutputEdit, 9, 2, 1, 1);
 
-        label_31 = new QLabel(frame);
-        label_31->setObjectName(QString::fromUtf8("label_31"));
-
-        gridLayout_5->addWidget(label_31, 11, 3, 1, 1);
-
-        label_30 = new QLabel(frame);
-        label_30->setObjectName(QString::fromUtf8("label_30"));
-
-        gridLayout_5->addWidget(label_30, 6, 0, 1, 1);
-
-        verticalSpacer_2 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-        gridLayout_5->addItem(verticalSpacer_2, 16, 2, 1, 1);
-
-        throttleEdit = new QLineEdit(frame);
-        throttleEdit->setObjectName(QString::fromUtf8("throttleEdit"));
-        sizePolicy10.setHeightForWidth(throttleEdit->sizePolicy().hasHeightForWidth());
-        throttleEdit->setSizePolicy(sizePolicy10);
-        throttleEdit->setMinimumSize(QSize(0, 0));
-        throttleEdit->setMaximumSize(QSize(80, 16777215));
-        throttleEdit->setSizeIncrement(QSize(0, 0));
-        throttleEdit->setBaseSize(QSize(0, 0));
-        throttleEdit->setFont(font1);
-        throttleEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        throttleEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        throttleEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(throttleEdit, 3, 2, 1, 1);
-
-        mapEdit = new QLineEdit(frame);
-        mapEdit->setObjectName(QString::fromUtf8("mapEdit"));
-        sizePolicy10.setHeightForWidth(mapEdit->sizePolicy().hasHeightForWidth());
-        mapEdit->setSizePolicy(sizePolicy10);
-        mapEdit->setMinimumSize(QSize(0, 0));
-        mapEdit->setMaximumSize(QSize(80, 16777215));
-        mapEdit->setSizeIncrement(QSize(0, 0));
-        mapEdit->setBaseSize(QSize(0, 0));
-        mapEdit->setFont(font4);
-        mapEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        mapEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        mapEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(mapEdit, 7, 2, 1, 1);
-
-        gearEdit = new QLineEdit(frame);
-        gearEdit->setObjectName(QString::fromUtf8("gearEdit"));
-        sizePolicy10.setHeightForWidth(gearEdit->sizePolicy().hasHeightForWidth());
-        gearEdit->setSizePolicy(sizePolicy10);
-        gearEdit->setMinimumSize(QSize(0, 0));
-        gearEdit->setMaximumSize(QSize(80, 16777215));
-        gearEdit->setSizeIncrement(QSize(0, 0));
-        gearEdit->setBaseSize(QSize(0, 0));
-        gearEdit->setFont(font1);
-        gearEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        gearEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        gearEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(gearEdit, 4, 2, 1, 1);
-
-        label_23 = new QLabel(frame);
-        label_23->setObjectName(QString::fromUtf8("label_23"));
-        sizePolicy11.setHeightForWidth(label_23->sizePolicy().hasHeightForWidth());
-        label_23->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_23, 3, 0, 1, 1);
-
-        label_35 = new QLabel(frame);
-        label_35->setObjectName(QString::fromUtf8("label_35"));
-
-        gridLayout_5->addWidget(label_35, 9, 3, 1, 1);
-
-        label_24 = new QLabel(frame);
-        label_24->setObjectName(QString::fromUtf8("label_24"));
-        sizePolicy11.setHeightForWidth(label_24->sizePolicy().hasHeightForWidth());
-        label_24->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_24, 3, 3, 1, 1);
-
         label_29 = new QLabel(frame);
         label_29->setObjectName(QString::fromUtf8("label_29"));
-        sizePolicy11.setHeightForWidth(label_29->sizePolicy().hasHeightForWidth());
-        label_29->setSizePolicy(sizePolicy11);
+        sizePolicy10.setHeightForWidth(label_29->sizePolicy().hasHeightForWidth());
+        label_29->setSizePolicy(sizePolicy10);
 
         gridLayout_5->addWidget(label_29, 10, 3, 1, 1);
 
-        loadEdit = new QLineEdit(frame);
-        loadEdit->setObjectName(QString::fromUtf8("loadEdit"));
-        sizePolicy10.setHeightForWidth(loadEdit->sizePolicy().hasHeightForWidth());
-        loadEdit->setSizePolicy(sizePolicy10);
-        loadEdit->setMinimumSize(QSize(0, 0));
-        loadEdit->setMaximumSize(QSize(80, 16777215));
-        loadEdit->setSizeIncrement(QSize(0, 0));
-        loadEdit->setBaseSize(QSize(0, 0));
-        loadEdit->setFont(font1);
-        loadEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
-        loadEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        loadEdit->setReadOnly(true);
-
-        gridLayout_5->addWidget(loadEdit, 10, 2, 1, 1);
-
-        label_28 = new QLabel(frame);
-        label_28->setObjectName(QString::fromUtf8("label_28"));
-        sizePolicy11.setHeightForWidth(label_28->sizePolicy().hasHeightForWidth());
-        label_28->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_28, 10, 0, 1, 1);
-
-        label_22 = new QLabel(frame);
-        label_22->setObjectName(QString::fromUtf8("label_22"));
-        sizePolicy11.setHeightForWidth(label_22->sizePolicy().hasHeightForWidth());
-        label_22->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_22, 7, 3, 1, 1);
-
-        label_20 = new QLabel(frame);
-        label_20->setObjectName(QString::fromUtf8("label_20"));
-        sizePolicy11.setHeightForWidth(label_20->sizePolicy().hasHeightForWidth());
-        label_20->setSizePolicy(sizePolicy11);
-
-        gridLayout_5->addWidget(label_20, 2, 3, 1, 1);
-
         rpmEdit = new QLineEdit(frame);
         rpmEdit->setObjectName(QString::fromUtf8("rpmEdit"));
-        sizePolicy10.setHeightForWidth(rpmEdit->sizePolicy().hasHeightForWidth());
-        rpmEdit->setSizePolicy(sizePolicy10);
+        sizePolicy11.setHeightForWidth(rpmEdit->sizePolicy().hasHeightForWidth());
+        rpmEdit->setSizePolicy(sizePolicy11);
         rpmEdit->setMinimumSize(QSize(0, 0));
         rpmEdit->setMaximumSize(QSize(80, 16777215));
         rpmEdit->setSizeIncrement(QSize(0, 0));
@@ -970,29 +786,131 @@ public:
 
         gridLayout_5->addWidget(rpmEdit, 0, 2, 1, 1);
 
-        knockSum = new QLineEdit(frame);
-        knockSum->setObjectName(QString::fromUtf8("knockSum"));
-        sizePolicy10.setHeightForWidth(knockSum->sizePolicy().hasHeightForWidth());
-        knockSum->setSizePolicy(sizePolicy10);
-        knockSum->setMaximumSize(QSize(80, 16777215));
-        knockSum->setBaseSize(QSize(0, 0));
-        knockSum->setFont(font4);
-        knockSum->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-        knockSum->setReadOnly(true);
+        label_21 = new QLabel(frame);
+        label_21->setObjectName(QString::fromUtf8("label_21"));
+        sizePolicy10.setHeightForWidth(label_21->sizePolicy().hasHeightForWidth());
+        label_21->setSizePolicy(sizePolicy10);
 
-        gridLayout_5->addWidget(knockSum, 6, 2, 1, 1);
+        gridLayout_5->addWidget(label_21, 7, 0, 1, 1);
+
+        label_32 = new QLabel(frame);
+        label_32->setObjectName(QString::fromUtf8("label_32"));
+
+        gridLayout_5->addWidget(label_32, 8, 0, 1, 1);
+
+        label_20 = new QLabel(frame);
+        label_20->setObjectName(QString::fromUtf8("label_20"));
+        sizePolicy10.setHeightForWidth(label_20->sizePolicy().hasHeightForWidth());
+        label_20->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_20, 2, 3, 1, 1);
+
+        label_28 = new QLabel(frame);
+        label_28->setObjectName(QString::fromUtf8("label_28"));
+        sizePolicy10.setHeightForWidth(label_28->sizePolicy().hasHeightForWidth());
+        label_28->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_28, 10, 0, 1, 1);
+
+        label_31 = new QLabel(frame);
+        label_31->setObjectName(QString::fromUtf8("label_31"));
+
+        gridLayout_5->addWidget(label_31, 11, 3, 1, 1);
+
+        gearEdit = new QLineEdit(frame);
+        gearEdit->setObjectName(QString::fromUtf8("gearEdit"));
+        sizePolicy11.setHeightForWidth(gearEdit->sizePolicy().hasHeightForWidth());
+        gearEdit->setSizePolicy(sizePolicy11);
+        gearEdit->setMinimumSize(QSize(0, 0));
+        gearEdit->setMaximumSize(QSize(80, 16777215));
+        gearEdit->setSizeIncrement(QSize(0, 0));
+        gearEdit->setBaseSize(QSize(0, 0));
+        gearEdit->setFont(font1);
+        gearEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        gearEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        gearEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(gearEdit, 4, 2, 1, 1);
+
+        label_47 = new QLabel(frame);
+        label_47->setObjectName(QString::fromUtf8("label_47"));
+
+        gridLayout_5->addWidget(label_47, 14, 0, 1, 1);
+
+        label_23 = new QLabel(frame);
+        label_23->setObjectName(QString::fromUtf8("label_23"));
+        sizePolicy10.setHeightForWidth(label_23->sizePolicy().hasHeightForWidth());
+        label_23->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_23, 3, 0, 1, 1);
+
+        targetBoostEdit = new QLineEdit(frame);
+        targetBoostEdit->setObjectName(QString::fromUtf8("targetBoostEdit"));
+        sizePolicy11.setHeightForWidth(targetBoostEdit->sizePolicy().hasHeightForWidth());
+        targetBoostEdit->setSizePolicy(sizePolicy11);
+        targetBoostEdit->setMaximumSize(QSize(80, 16777215));
+        targetBoostEdit->setBaseSize(QSize(0, 0));
+        targetBoostEdit->setFont(font4);
+        targetBoostEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        targetBoostEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(targetBoostEdit, 8, 2, 1, 1);
+
+        label_33 = new QLabel(frame);
+        label_33->setObjectName(QString::fromUtf8("label_33"));
+
+        gridLayout_5->addWidget(label_33, 8, 3, 1, 1);
+
+        label_34 = new QLabel(frame);
+        label_34->setObjectName(QString::fromUtf8("label_34"));
+
+        gridLayout_5->addWidget(label_34, 9, 0, 1, 1);
+
+        label_27 = new QLabel(frame);
+        label_27->setObjectName(QString::fromUtf8("label_27"));
+        sizePolicy10.setHeightForWidth(label_27->sizePolicy().hasHeightForWidth());
+        label_27->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_27, 4, 0, 1, 1);
+
+        solDcEdit = new QLineEdit(frame);
+        solDcEdit->setObjectName(QString::fromUtf8("solDcEdit"));
+        sizePolicy11.setHeightForWidth(solDcEdit->sizePolicy().hasHeightForWidth());
+        solDcEdit->setSizePolicy(sizePolicy11);
+        solDcEdit->setMinimumSize(QSize(0, 0));
+        solDcEdit->setMaximumSize(QSize(80, 16777215));
+        solDcEdit->setSizeIncrement(QSize(0, 0));
+        solDcEdit->setBaseSize(QSize(0, 0));
+        solDcEdit->setFont(font1);
+        solDcEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        solDcEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        solDcEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(solDcEdit, 5, 2, 1, 1);
+
+        label_43 = new QLabel(frame);
+        label_43->setObjectName(QString::fromUtf8("label_43"));
+
+        gridLayout_5->addWidget(label_43, 13, 3, 1, 1);
+
+        label_26 = new QLabel(frame);
+        label_26->setObjectName(QString::fromUtf8("label_26"));
+        sizePolicy10.setHeightForWidth(label_26->sizePolicy().hasHeightForWidth());
+        label_26->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_26, 5, 3, 1, 1);
 
         label_19 = new QLabel(frame);
         label_19->setObjectName(QString::fromUtf8("label_19"));
-        sizePolicy11.setHeightForWidth(label_19->sizePolicy().hasHeightForWidth());
-        label_19->setSizePolicy(sizePolicy11);
+        sizePolicy10.setHeightForWidth(label_19->sizePolicy().hasHeightForWidth());
+        label_19->setSizePolicy(sizePolicy10);
 
         gridLayout_5->addWidget(label_19, 2, 0, 1, 1);
 
         cpuLoadEdit = new QLineEdit(frame);
         cpuLoadEdit->setObjectName(QString::fromUtf8("cpuLoadEdit"));
-        sizePolicy10.setHeightForWidth(cpuLoadEdit->sizePolicy().hasHeightForWidth());
-        cpuLoadEdit->setSizePolicy(sizePolicy10);
+        sizePolicy11.setHeightForWidth(cpuLoadEdit->sizePolicy().hasHeightForWidth());
+        cpuLoadEdit->setSizePolicy(sizePolicy11);
         cpuLoadEdit->setMaximumSize(QSize(80, 16777215));
         cpuLoadEdit->setBaseSize(QSize(0, 0));
         cpuLoadEdit->setFont(font1);
@@ -1001,10 +919,25 @@ public:
 
         gridLayout_5->addWidget(cpuLoadEdit, 11, 2, 1, 1);
 
+        throttleEdit = new QLineEdit(frame);
+        throttleEdit->setObjectName(QString::fromUtf8("throttleEdit"));
+        sizePolicy11.setHeightForWidth(throttleEdit->sizePolicy().hasHeightForWidth());
+        throttleEdit->setSizePolicy(sizePolicy11);
+        throttleEdit->setMinimumSize(QSize(0, 0));
+        throttleEdit->setMaximumSize(QSize(80, 16777215));
+        throttleEdit->setSizeIncrement(QSize(0, 0));
+        throttleEdit->setBaseSize(QSize(0, 0));
+        throttleEdit->setFont(font1);
+        throttleEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        throttleEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        throttleEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(throttleEdit, 3, 2, 1, 1);
+
         airFlowEdit = new QLineEdit(frame);
         airFlowEdit->setObjectName(QString::fromUtf8("airFlowEdit"));
-        sizePolicy10.setHeightForWidth(airFlowEdit->sizePolicy().hasHeightForWidth());
-        airFlowEdit->setSizePolicy(sizePolicy10);
+        sizePolicy11.setHeightForWidth(airFlowEdit->sizePolicy().hasHeightForWidth());
+        airFlowEdit->setSizePolicy(sizePolicy11);
         airFlowEdit->setMaximumSize(QSize(80, 16777215));
         airFlowEdit->setBaseSize(QSize(0, 0));
         airFlowEdit->setFont(font1);
@@ -1013,10 +946,99 @@ public:
 
         gridLayout_5->addWidget(airFlowEdit, 13, 2, 1, 1);
 
-        label_43 = new QLabel(frame);
-        label_43->setObjectName(QString::fromUtf8("label_43"));
+        label_42 = new QLabel(frame);
+        label_42->setObjectName(QString::fromUtf8("label_42"));
 
-        gridLayout_5->addWidget(label_43, 13, 3, 1, 1);
+        gridLayout_5->addWidget(label_42, 13, 0, 1, 1);
+
+        label_25 = new QLabel(frame);
+        label_25->setObjectName(QString::fromUtf8("label_25"));
+        sizePolicy10.setHeightForWidth(label_25->sizePolicy().hasHeightForWidth());
+        label_25->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_25, 5, 0, 1, 1);
+
+        loadEdit = new QLineEdit(frame);
+        loadEdit->setObjectName(QString::fromUtf8("loadEdit"));
+        sizePolicy11.setHeightForWidth(loadEdit->sizePolicy().hasHeightForWidth());
+        loadEdit->setSizePolicy(sizePolicy11);
+        loadEdit->setMinimumSize(QSize(0, 0));
+        loadEdit->setMaximumSize(QSize(80, 16777215));
+        loadEdit->setSizeIncrement(QSize(0, 0));
+        loadEdit->setBaseSize(QSize(0, 0));
+        loadEdit->setFont(font1);
+        loadEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        loadEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        loadEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(loadEdit, 10, 2, 1, 1);
+
+        label_18 = new QLabel(frame);
+        label_18->setObjectName(QString::fromUtf8("label_18"));
+        sizePolicy10.setHeightForWidth(label_18->sizePolicy().hasHeightForWidth());
+        label_18->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_18, 0, 0, 1, 1);
+
+        mapEdit = new QLineEdit(frame);
+        mapEdit->setObjectName(QString::fromUtf8("mapEdit"));
+        sizePolicy11.setHeightForWidth(mapEdit->sizePolicy().hasHeightForWidth());
+        mapEdit->setSizePolicy(sizePolicy11);
+        mapEdit->setMinimumSize(QSize(0, 0));
+        mapEdit->setMaximumSize(QSize(80, 16777215));
+        mapEdit->setSizeIncrement(QSize(0, 0));
+        mapEdit->setBaseSize(QSize(0, 0));
+        mapEdit->setFont(font4);
+        mapEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        mapEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        mapEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(mapEdit, 7, 2, 1, 1);
+
+        label_22 = new QLabel(frame);
+        label_22->setObjectName(QString::fromUtf8("label_22"));
+        sizePolicy10.setHeightForWidth(label_22->sizePolicy().hasHeightForWidth());
+        label_22->setSizePolicy(sizePolicy10);
+
+        gridLayout_5->addWidget(label_22, 7, 3, 1, 1);
+
+        speedEdit = new QLineEdit(frame);
+        speedEdit->setObjectName(QString::fromUtf8("speedEdit"));
+        sizePolicy11.setHeightForWidth(speedEdit->sizePolicy().hasHeightForWidth());
+        speedEdit->setSizePolicy(sizePolicy11);
+        speedEdit->setMinimumSize(QSize(0, 0));
+        speedEdit->setMaximumSize(QSize(80, 16777215));
+        speedEdit->setSizeIncrement(QSize(0, 0));
+        speedEdit->setBaseSize(QSize(0, 0));
+        speedEdit->setFont(font1);
+        speedEdit->setLocale(QLocale(QLocale::English, QLocale::UnitedStates));
+        speedEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        speedEdit->setReadOnly(true);
+
+        gridLayout_5->addWidget(speedEdit, 2, 2, 1, 1);
+
+        verticalSpacer_2 = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+
+        gridLayout_5->addItem(verticalSpacer_2, 16, 2, 1, 1);
+
+        label_35 = new QLabel(frame);
+        label_35->setObjectName(QString::fromUtf8("label_35"));
+
+        gridLayout_5->addWidget(label_35, 9, 3, 1, 1);
+
+        fuelPressEdit = new QLineEdit(frame);
+        fuelPressEdit->setObjectName(QString::fromUtf8("fuelPressEdit"));
+        sizePolicy11.setHeightForWidth(fuelPressEdit->sizePolicy().hasHeightForWidth());
+        fuelPressEdit->setSizePolicy(sizePolicy11);
+        fuelPressEdit->setMaximumSize(QSize(80, 16777215));
+        fuelPressEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_5->addWidget(fuelPressEdit, 14, 2, 1, 1);
+
+        label_48 = new QLabel(frame);
+        label_48->setObjectName(QString::fromUtf8("label_48"));
+
+        gridLayout_5->addWidget(label_48, 14, 3, 1, 1);
 
 
         horizontalLayout->addWidget(frame);
@@ -1096,7 +1118,7 @@ public:
         QObject::connect(openButton, SIGNAL(clicked()), MainWindow, SLOT(connectPort()));
         QObject::connect(closeButton, SIGNAL(clicked()), MainWindow, SLOT(closePort()));
 
-        tabWidget->setCurrentIndex(0);
+        tabWidget->setCurrentIndex(2);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -1184,27 +1206,29 @@ public:
         tableColumnLabel->setText(QApplication::translate("MainWindow", "GEAR", nullptr));
         tableRowLabel->setText(QApplication::translate("MainWindow", "RPM", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_3), QApplication::translate("MainWindow", "Tables", nullptr));
-        label_26->setText(QApplication::translate("MainWindow", "%", nullptr));
-        label_32->setText(QApplication::translate("MainWindow", "Target Boost", nullptr));
-        label_21->setText(QApplication::translate("MainWindow", "BOOST", nullptr));
         label_37->setText(QApplication::translate("MainWindow", "CPU Load", nullptr));
-        label_34->setText(QApplication::translate("MainWindow", "Taget Output", nullptr));
-        label_42->setText(QApplication::translate("MainWindow", "Air flow", nullptr));
-        label_33->setText(QApplication::translate("MainWindow", "Bar", nullptr));
-        label_18->setText(QApplication::translate("MainWindow", "RPM", nullptr));
-        label_25->setText(QApplication::translate("MainWindow", "Sol DC", nullptr));
-        label_27->setText(QApplication::translate("MainWindow", "Gear", nullptr));
-        label_31->setText(QApplication::translate("MainWindow", "%", nullptr));
-        label_30->setText(QApplication::translate("MainWindow", "Knock", nullptr));
-        label_23->setText(QApplication::translate("MainWindow", "Throttle", nullptr));
-        label_35->setText(QApplication::translate("MainWindow", "Bar", nullptr));
         label_24->setText(QApplication::translate("MainWindow", "%", nullptr));
+        label_30->setText(QApplication::translate("MainWindow", "Knock", nullptr));
         label_29->setText(QApplication::translate("MainWindow", "%", nullptr));
-        label_28->setText(QApplication::translate("MainWindow", "Load", nullptr));
-        label_22->setText(QApplication::translate("MainWindow", "Bar", nullptr));
+        label_21->setText(QApplication::translate("MainWindow", "BOOST", nullptr));
+        label_32->setText(QApplication::translate("MainWindow", "Target Boost", nullptr));
         label_20->setText(QApplication::translate("MainWindow", "km/h", nullptr));
-        label_19->setText(QApplication::translate("MainWindow", "Speed", nullptr));
+        label_28->setText(QApplication::translate("MainWindow", "Load", nullptr));
+        label_31->setText(QApplication::translate("MainWindow", "%", nullptr));
+        label_47->setText(QApplication::translate("MainWindow", "Fuel Press", nullptr));
+        label_23->setText(QApplication::translate("MainWindow", "Throttle", nullptr));
+        label_33->setText(QApplication::translate("MainWindow", "Bar", nullptr));
+        label_34->setText(QApplication::translate("MainWindow", "Taget Output", nullptr));
+        label_27->setText(QApplication::translate("MainWindow", "Gear", nullptr));
         label_43->setText(QApplication::translate("MainWindow", "Hz", nullptr));
+        label_26->setText(QApplication::translate("MainWindow", "%", nullptr));
+        label_19->setText(QApplication::translate("MainWindow", "Speed", nullptr));
+        label_42->setText(QApplication::translate("MainWindow", "Air flow", nullptr));
+        label_25->setText(QApplication::translate("MainWindow", "Sol DC", nullptr));
+        label_18->setText(QApplication::translate("MainWindow", "RPM", nullptr));
+        label_22->setText(QApplication::translate("MainWindow", "Bar", nullptr));
+        label_35->setText(QApplication::translate("MainWindow", "Bar", nullptr));
+        label_48->setText(QApplication::translate("MainWindow", "Bar", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_2), QApplication::translate("MainWindow", "Monitor", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tabPlotter), QApplication::translate("MainWindow", "Page", nullptr));
         toolBar->setWindowTitle(QApplication::translate("MainWindow", "toolBar", nullptr));

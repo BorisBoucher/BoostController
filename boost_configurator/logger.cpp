@@ -26,7 +26,7 @@ void Logger::startLog(const QString& logDir)
 	QTextStream out(&mLogFile);
 	out << "LogID,LogEntryDate,LogEntryTime,LogEntrySeconds,LogNotes,"
 		<< "TPS,RPM,Speed,Gear,TimingAdv,FuelTrim_Low,FuelTrim_Mid,FuelTrim_High,"
-		   "MAP,TargetBoost,WGDC,"
+		   "FuelPress,MAP,TargetBoost,WGDC,"
 		<< "knockSum,O2FuelTrim,O2Front,O2Rear,InjPulseFront,InjPulseRear,AccelEnrich,"
 		<< "AirFlow"
 		<< endl;
@@ -52,6 +52,7 @@ void Logger::addLogline(
 		float* fuelTrimLow,
 		float* fuelTrimMid,
 		float* fuelTrimHigh,
+		float* fuelPressure,
 		float* MAP,
 		float* targetBoost,
 		float* solDC,
@@ -107,12 +108,13 @@ void Logger::addLogline(
 				<< ',';							// log notes
 				formatFloat(TPS, 0);
 				formatFloat(RPM, 0);
-				formatFloat(speed), 0;
+				formatFloat(speed, 0);
 				out << gear << ',';
 				formatFloat(timingAdv);
 				formatFloat(fuelTrimLow);
 				formatFloat(fuelTrimMid);
 				formatFloat(fuelTrimHigh);
+				formatFloat(fuelPressure, 2);
 				formatFloat(MAP, 2);
 				formatFloat(targetBoost, 2);
 				formatFloat(solDC, 0);
