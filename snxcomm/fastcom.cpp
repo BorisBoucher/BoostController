@@ -90,7 +90,7 @@ bool FastCom::transaction(uint8_t* sendBuffer, qint64 sendSize,
 	int loop = 0;
 	QTime timer;
 	timer.start();
-	while (timer.elapsed() < 10 && received < recvSize)
+	while (timer.elapsed() < 5000 && received < recvSize)
 	{
 		if (this->mSerialPort->waitForReadyRead(100))
 		{
@@ -102,7 +102,7 @@ bool FastCom::transaction(uint8_t* sendBuffer, qint64 sendSize,
 		}
 		++loop;
 	}
-//	if (loop > 1)
+	if (loop > 1)
 	{
 		qDebug() << "Loop = " << loop << ", result :" << (received == recvSize) << "took :" << timer.elapsed() << "ms";
 	}
@@ -121,7 +121,7 @@ void FastCom::processWrites()
 	for (const auto& write : writes)
 	{
 		uint8_t buffer[4];
-		uint8_t recvBuffer[2];
+		uint8_t recvBuffer[4];
 
 		qint64 size;
 		encodeHeader(buffer, false, write.mAddr);
@@ -214,7 +214,7 @@ void FastCom::run()
 	{
 		std::cout << "Failed to open serial port : " << mSerialPort->errorString().toStdString() << std::endl;
 	}
-
+	mSerialPort->setTextModeEnabled(false);
 
 	// Operation prorities :
 	// 1 - writes

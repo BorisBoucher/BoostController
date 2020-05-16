@@ -5,3 +5,5 @@ snxcomm/Makefile*
 */.qmake.stash
 Archive_and_unused/
 *.pyc
+build-boost_configurator-Desktop_Qt_5_9_1_MSVC2015_64bit-Debug/*
+snxcomm/release/*

@@ -281,7 +281,7 @@
 #include <EEPROM.h>
 
 
-FilterOnePole lowpassFilter( LOWPASS, 10.0f ); 
+FilterOnePole boostHighpassFilter( HIGHPASS, 0.1f ); 
 FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
 FilterOnePole throttleLowpassFilter( LOWPASS, 5.0f );
 FilterOnePole throttleDerHighpassFilter( HIGHPASS, 2.0f );
@@ -860,7 +860,7 @@ void evalCycle()
 		gErrorInteg = 0.0f;
 	}
 	gErrorDeriv = ((error - gLastError) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
-	gErrorDeriv = lowpassFilter.input(gErrorDeriv);
+	gErrorDeriv = boostHighpassFilter.input(gErrorDeriv);
 	gErrorDeriv = constrain(gErrorDeriv, -0.5f, 0.5f);
 	gLastMAP = gMeasures.MAP;
 	gLastError = error;
