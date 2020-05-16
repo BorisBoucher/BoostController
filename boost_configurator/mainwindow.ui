@@ -37,7 +37,7 @@
          </sizepolicy>
         </property>
         <property name="currentIndex">
-         <number>2</number>
+         <number>0</number>
         </property>
         <property name="tabsClosable">
          <bool>false</bool>
@@ -255,6 +255,9 @@
                  <property name="inputMask">
                   <string/>
                  </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
                  <property name="readOnly">
                   <bool>true</bool>
                  </property>
@@ -264,13 +267,6 @@
                 <widget class="QPushButton" name="buttonCloseMut">
                  <property name="text">
                   <string>CLOSE</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="12" column="4">
-                <widget class="QLabel" name="label_39">
-                 <property name="text">
-                  <string>Simulation</string>
                  </property>
                 </widget>
                </item>
@@ -285,16 +281,6 @@
                 <widget class="QLabel" name="label_8">
                  <property name="text">
                   <string>5th gear</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                 </property>
-                </widget>
-               </item>
-               <item row="13" column="4">
-                <widget class="QLabel" name="label_40">
-                 <property name="text">
-                  <string>Force Waste Gate</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -375,24 +361,6 @@
                 <widget class="QLabel" name="label_14">
                  <property name="text">
                   <string>PID</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="13" column="5">
-                <widget class="QLineEdit" name="forceWGEdit">
-                 <property name="font">
-                  <font>
-                   <pointsize>12</pointsize>
-                  </font>
-                 </property>
-                 <property name="inputMask">
-                  <string/>
-                 </property>
-                 <property name="text">
-                  <string>0</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                  </property>
                 </widget>
                </item>
@@ -667,7 +635,63 @@
                  </property>
                 </widget>
                </item>
-               <item row="13" column="6">
+               <item row="14" column="5">
+                <widget class="QLineEdit" name="forceWGEdit">
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="inputMask">
+                  <string/>
+                 </property>
+                 <property name="text">
+                  <string>0</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="14" column="4">
+                <widget class="QLabel" name="label_40">
+                 <property name="text">
+                  <string>Force Waste Gate</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="13" column="4">
+                <widget class="QLabel" name="label_39">
+                 <property name="text">
+                  <string>Simulation</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="12" column="4">
+                <widget class="QLabel" name="label_49">
+                 <property name="text">
+                  <string>Prime pump</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="12" column="5">
+                <widget class="QLineEdit" name="fuelPumpPrimeEdit">
+                 <property name="alignment">
+                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 </property>
+                </widget>
+               </item>
+               <item row="12" column="6">
+                <widget class="QLabel" name="label_50">
+                 <property name="text">
+                  <string>s</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="14" column="6">
                 <widget class="QLabel" name="label_46">
                  <property name="text">
                   <string>%</string>
@@ -1681,7 +1705,7 @@
      <x>0</x>
      <y>0</y>
      <width>965</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -1816,12 +1840,33 @@
   <tabstop>pidPEdit</tabstop>
   <tabstop>pidIEdit</tabstop>
   <tabstop>pidDEdit</tabstop>
-  <tabstop>tabWidget</tabstop>
-  <tabstop>solDcEdit</tabstop>
-  <tabstop>speedEdit</tabstop>
+  <tabstop>maxThrottleEdit</tabstop>
+  <tabstop>fuelPumpPrimeEdit</tabstop>
+  <tabstop>forceWGEdit</tabstop>
   <tabstop>rpmEdit</tabstop>
   <tabstop>loadEdit</tabstop>
   <tabstop>cpuLoadEdit</tabstop>
+  <tabstop>firmwareVersion</tabstop>
+  <tabstop>comboBox</tabstop>
+  <tabstop>openButton</tabstop>
+  <tabstop>closeButton</tabstop>
+  <tabstop>reloadButton</tabstop>
+  <tabstop>portListMut</tabstop>
+  <tabstop>buttonOpenMut</tabstop>
+  <tabstop>buttonCloseMut</tabstop>
+  <tabstop>speedEdit</tabstop>
+  <tabstop>solDcEdit</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>listTable</tabstop>
+  <tabstop>tableWidget</tabstop>
+  <tabstop>knockSum</tabstop>
+  <tabstop>targetOutputEdit</tabstop>
+  <tabstop>gearEdit</tabstop>
+  <tabstop>targetBoostEdit</tabstop>
+  <tabstop>throttleEdit</tabstop>
+  <tabstop>airFlowEdit</tabstop>
+  <tabstop>mapEdit</tabstop>
+  <tabstop>fuelPressEdit</tabstop>
  </tabstops>
  <resources/>
  <connections>

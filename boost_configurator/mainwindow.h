@@ -102,6 +102,8 @@ private slots:
 
 	void on_maxThrottleEdit_editingFinished();
 
+	void on_fuelPumpPrimeEdit_editingFinished();
+
 	void on_forceWGEdit_editingFinished();
 
 	void on_actionStart_Log_changed();

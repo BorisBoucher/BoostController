@@ -8,6 +8,8 @@ QT       += core gui printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+RC_ICONS = turbo.ico
+
 TARGET = boost_configurator
 TEMPLATE = app
 QT += serialport
@@ -24,7 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 INCLUDEPATH += D:\dev\perso\BoostControler\snxcomm
-LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug -lsnxcomm
+#win32:CONFIG(release, debug|release): LIBS += -LD:\dev\perso\BoostControler\snxcomm\release
+#else:win32:CONFIG(debug, debug|release): LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
+#LIBS += -LD:\dev\perso\BoostControler\snxcomm\%{CurrentBuild:Type}
+LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
+#@debug {
+#LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
+#}
+#@release {
+#LIBS += -LD:\dev\perso\BoostControler\snxcomm\release
+#}
+LIBS += -lsnxcomm
 LIBS += -lws2_32
 
 SOURCES += \
@@ -50,3 +62,6 @@ HEADERS += \
 FORMS += \
         mainwindow.ui \
         setting.ui
+
+DISTFILES += \
+	boost_configurator.res

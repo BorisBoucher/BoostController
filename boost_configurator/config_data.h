@@ -36,6 +36,7 @@ enum BC_ADDR
 	MAX_THROTTLE =		0x05a,
 
 	FUEL_PRESSURE =		0x05b,
+	FUEL_PUMP_PRIME =	0x05c,
 
 	TYRE_CIRC =			0x800,
 	GEAR_RATIO_1 =		0x801,		// 6 values
@@ -77,6 +78,8 @@ struct ConfigData
 
 	// Throttle max value calibrarion (%)
 	uint8_t  mMaxThrottle;
+	// Fuel pump prime on power up (0 to not prime)
+	uint8_t  mFuelPumpPrime;
 };
 
 struct Measures

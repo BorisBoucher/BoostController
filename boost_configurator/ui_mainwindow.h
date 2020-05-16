@@ -70,10 +70,8 @@ public:
     QLabel *label_16;
     QLineEdit *firmwareVersion;
     QPushButton *buttonCloseMut;
-    QLabel *label_39;
     QLabel *label_3;
     QLabel *label_8;
-    QLabel *label_40;
     QLineEdit *gear3Edit;
     QLabel *label_15;
     QLineEdit *pidIEdit;
@@ -81,7 +79,6 @@ public:
     QComboBox *portListMut;
     QLabel *label_6;
     QLabel *label_14;
-    QLineEdit *forceWGEdit;
     QLabel *label_7;
     QLabel *label_13;
     QLineEdit *gear1Edit;
@@ -106,6 +103,12 @@ public:
     QLineEdit *pidDEdit;
     QLabel *label_44;
     QLabel *label_45;
+    QLineEdit *forceWGEdit;
+    QLabel *label_40;
+    QLabel *label_39;
+    QLabel *label_49;
+    QLineEdit *fuelPumpPrimeEdit;
+    QLabel *label_50;
     QLabel *label_46;
     QSpacerItem *horizontalSpacer;
     QSpacerItem *verticalSpacer;
@@ -349,6 +352,7 @@ public:
         firmwareVersion->setObjectName(QString::fromUtf8("firmwareVersion"));
         firmwareVersion->setFont(font1);
         firmwareVersion->setInputMethodHints(Qt::ImhFormattedNumbersOnly);
+        firmwareVersion->setAlignment(Qt::AlignCenter);
         firmwareVersion->setReadOnly(true);
 
         gridLayout_2->addWidget(firmwareVersion, 4, 5, 1, 1);
@@ -357,11 +361,6 @@ public:
         buttonCloseMut->setObjectName(QString::fromUtf8("buttonCloseMut"));
 
         gridLayout_2->addWidget(buttonCloseMut, 16, 5, 2, 1);
-
-        label_39 = new QLabel(frame_2);
-        label_39->setObjectName(QString::fromUtf8("label_39"));
-
-        gridLayout_2->addWidget(label_39, 12, 4, 1, 1);
 
         label_3 = new QLabel(frame_2);
         label_3->setObjectName(QString::fromUtf8("label_3"));
@@ -373,12 +372,6 @@ public:
         label_8->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
 
         gridLayout_2->addWidget(label_8, 11, 0, 1, 1);
-
-        label_40 = new QLabel(frame_2);
-        label_40->setObjectName(QString::fromUtf8("label_40"));
-        label_40->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(label_40, 13, 4, 1, 1);
 
         gear3Edit = new QLineEdit(frame_2);
         gear3Edit->setObjectName(QString::fromUtf8("gear3Edit"));
@@ -426,13 +419,6 @@ public:
         label_14->setObjectName(QString::fromUtf8("label_14"));
 
         gridLayout_2->addWidget(label_14, 6, 4, 1, 1);
-
-        forceWGEdit = new QLineEdit(frame_2);
-        forceWGEdit->setObjectName(QString::fromUtf8("forceWGEdit"));
-        forceWGEdit->setFont(font1);
-        forceWGEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-
-        gridLayout_2->addWidget(forceWGEdit, 13, 5, 1, 1);
 
         label_7 = new QLabel(frame_2);
         label_7->setObjectName(QString::fromUtf8("label_7"));
@@ -590,10 +576,44 @@ public:
 
         gridLayout_2->addWidget(label_45, 11, 6, 1, 1);
 
+        forceWGEdit = new QLineEdit(frame_2);
+        forceWGEdit->setObjectName(QString::fromUtf8("forceWGEdit"));
+        forceWGEdit->setFont(font1);
+        forceWGEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(forceWGEdit, 14, 5, 1, 1);
+
+        label_40 = new QLabel(frame_2);
+        label_40->setObjectName(QString::fromUtf8("label_40"));
+        label_40->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(label_40, 14, 4, 1, 1);
+
+        label_39 = new QLabel(frame_2);
+        label_39->setObjectName(QString::fromUtf8("label_39"));
+
+        gridLayout_2->addWidget(label_39, 13, 4, 1, 1);
+
+        label_49 = new QLabel(frame_2);
+        label_49->setObjectName(QString::fromUtf8("label_49"));
+
+        gridLayout_2->addWidget(label_49, 12, 4, 1, 1);
+
+        fuelPumpPrimeEdit = new QLineEdit(frame_2);
+        fuelPumpPrimeEdit->setObjectName(QString::fromUtf8("fuelPumpPrimeEdit"));
+        fuelPumpPrimeEdit->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+
+        gridLayout_2->addWidget(fuelPumpPrimeEdit, 12, 5, 1, 1);
+
+        label_50 = new QLabel(frame_2);
+        label_50->setObjectName(QString::fromUtf8("label_50"));
+
+        gridLayout_2->addWidget(label_50, 12, 6, 1, 1);
+
         label_46 = new QLabel(frame_2);
         label_46->setObjectName(QString::fromUtf8("label_46"));
 
-        gridLayout_2->addWidget(label_46, 13, 6, 1, 1);
+        gridLayout_2->addWidget(label_46, 14, 6, 1, 1);
 
 
         horizontalLayout_5->addLayout(gridLayout_2);
@@ -1077,7 +1097,7 @@ public:
         MainWindow->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
-        menuBar->setGeometry(QRect(0, 0, 965, 22));
+        menuBar->setGeometry(QRect(0, 0, 965, 21));
         MainWindow->setMenuBar(menuBar);
         statusBar = new QStatusBar(MainWindow);
         statusBar->setObjectName(QString::fromUtf8("statusBar"));
@@ -1099,12 +1119,33 @@ public:
         QWidget::setTabOrder(baseBoostEdit, pidPEdit);
         QWidget::setTabOrder(pidPEdit, pidIEdit);
         QWidget::setTabOrder(pidIEdit, pidDEdit);
-        QWidget::setTabOrder(pidDEdit, tabWidget);
-        QWidget::setTabOrder(tabWidget, solDcEdit);
-        QWidget::setTabOrder(solDcEdit, speedEdit);
-        QWidget::setTabOrder(speedEdit, rpmEdit);
+        QWidget::setTabOrder(pidDEdit, maxThrottleEdit);
+        QWidget::setTabOrder(maxThrottleEdit, fuelPumpPrimeEdit);
+        QWidget::setTabOrder(fuelPumpPrimeEdit, forceWGEdit);
+        QWidget::setTabOrder(forceWGEdit, rpmEdit);
         QWidget::setTabOrder(rpmEdit, loadEdit);
         QWidget::setTabOrder(loadEdit, cpuLoadEdit);
+        QWidget::setTabOrder(cpuLoadEdit, firmwareVersion);
+        QWidget::setTabOrder(firmwareVersion, comboBox);
+        QWidget::setTabOrder(comboBox, openButton);
+        QWidget::setTabOrder(openButton, closeButton);
+        QWidget::setTabOrder(closeButton, reloadButton);
+        QWidget::setTabOrder(reloadButton, portListMut);
+        QWidget::setTabOrder(portListMut, buttonOpenMut);
+        QWidget::setTabOrder(buttonOpenMut, buttonCloseMut);
+        QWidget::setTabOrder(buttonCloseMut, speedEdit);
+        QWidget::setTabOrder(speedEdit, solDcEdit);
+        QWidget::setTabOrder(solDcEdit, tabWidget);
+        QWidget::setTabOrder(tabWidget, listTable);
+        QWidget::setTabOrder(listTable, tableWidget);
+        QWidget::setTabOrder(tableWidget, knockSum);
+        QWidget::setTabOrder(knockSum, targetOutputEdit);
+        QWidget::setTabOrder(targetOutputEdit, gearEdit);
+        QWidget::setTabOrder(gearEdit, targetBoostEdit);
+        QWidget::setTabOrder(targetBoostEdit, throttleEdit);
+        QWidget::setTabOrder(throttleEdit, airFlowEdit);
+        QWidget::setTabOrder(airFlowEdit, mapEdit);
+        QWidget::setTabOrder(mapEdit, fuelPressEdit);
 
         toolBar->addAction(actionStart_Log);
         toolBar->addAction(actionConnect);
@@ -1118,7 +1159,7 @@ public:
         QObject::connect(openButton, SIGNAL(clicked()), MainWindow, SLOT(connectPort()));
         QObject::connect(closeButton, SIGNAL(clicked()), MainWindow, SLOT(closePort()));
 
-        tabWidget->setCurrentIndex(2);
+        tabWidget->setCurrentIndex(0);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -1166,18 +1207,14 @@ public:
         label_16->setText(QApplication::translate("MainWindow", "I", nullptr));
         firmwareVersion->setInputMask(QString());
         buttonCloseMut->setText(QApplication::translate("MainWindow", "CLOSE", nullptr));
-        label_39->setText(QApplication::translate("MainWindow", "Simulation", nullptr));
         label_3->setText(QApplication::translate("MainWindow", "Gear Ratio", nullptr));
         label_8->setText(QApplication::translate("MainWindow", "5th gear", nullptr));
-        label_40->setText(QApplication::translate("MainWindow", "Force Waste Gate", nullptr));
         gear3Edit->setInputMask(QString());
         label_15->setText(QApplication::translate("MainWindow", "P", nullptr));
         pidIEdit->setInputMask(QString());
         label_41->setText(QApplication::translate("MainWindow", "Firmware Version", nullptr));
         label_6->setText(QApplication::translate("MainWindow", "3rd gear", nullptr));
         label_14->setText(QApplication::translate("MainWindow", "PID", nullptr));
-        forceWGEdit->setInputMask(QString());
-        forceWGEdit->setText(QApplication::translate("MainWindow", "0", nullptr));
         label_7->setText(QApplication::translate("MainWindow", "4th gear", nullptr));
         label_13->setText(QApplication::translate("MainWindow", "BAR", nullptr));
         gear1Edit->setInputMask(QString());
@@ -1201,6 +1238,12 @@ public:
         pidDEdit->setInputMask(QString());
         label_44->setText(QApplication::translate("MainWindow", "Max throttle", nullptr));
         label_45->setText(QApplication::translate("MainWindow", "%", nullptr));
+        forceWGEdit->setInputMask(QString());
+        forceWGEdit->setText(QApplication::translate("MainWindow", "0", nullptr));
+        label_40->setText(QApplication::translate("MainWindow", "Force Waste Gate", nullptr));
+        label_39->setText(QApplication::translate("MainWindow", "Simulation", nullptr));
+        label_49->setText(QApplication::translate("MainWindow", "Prime pump", nullptr));
+        label_50->setText(QApplication::translate("MainWindow", "s", nullptr));
         label_46->setText(QApplication::translate("MainWindow", "%", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("MainWindow", "Configuration", nullptr));
         tableColumnLabel->setText(QApplication::translate("MainWindow", "GEAR", nullptr));

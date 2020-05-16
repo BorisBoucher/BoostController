@@ -304,7 +304,7 @@ void MainWindow::initAccessors()
 	// Scalar data
 	addAccessors(
 	{
-		//   float? addr   factor signed? offset
+		//float? addr         factor signed? offset
 		{true,  MAP,           50.0f, false, measureOffset(mMAP)			},	// MAP
 		{true,  THROTTLE,       1.0f, false, measureOffset(mThrottle)		},	// Throttle
 		{true,  WGDC,           1.0f, false, measureOffset(mSolDC)			},	// WFDC
@@ -319,7 +319,7 @@ void MainWindow::initAccessors()
 		{false,  VERSION_MAJOR,  1.0f, false, configOffset(mVersionMajor)	},	// FW version major
 		{false,  VERSION_MINOR,  1.0f, false, configOffset(mVersionMinor)	},	// FW version minor
 
-		{true,  FUEL_PRESSURE,  50.0f, false, measureOffset(mFUEL_PRESSURE)	},	// Fuel Pressure
+		{true,  FUEL_PRESSURE,  25.0f, false, measureOffset(mFUEL_PRESSURE)	},	// Fuel Pressure
 
 		{true,  TYRE_CIRC,      1000.0f, false, configOffset(mTyreSize)		},	// Tyre circ
 		{true,  SPEED_RATIO,    1000.0f, false, configOffset(mSpeedSensorRatio)},
@@ -332,6 +332,7 @@ void MainWindow::initAccessors()
 		{true,  THROTTLE_DERIV,    1.0f, true,  measureOffset(mThrottleDeriv)},
 		{true,  AIR_FLOW,          1.0f, false, measureOffset(mAirFlow)		},
 		{false, MAX_THROTTLE,      1.0f, false, configOffset(mMaxThrottle)	},
+		{false, FUEL_PUMP_PRIME,   1.0f, false, configOffset(mFuelPumpPrime)},
 	});
 
 	// Tables
@@ -493,6 +494,7 @@ void MainWindow::reloadConfig()
 					PID_D,
 					WGDC_TEST,
 					MAX_THROTTLE,
+					FUEL_PUMP_PRIME,
 				});
 }
 
@@ -523,6 +525,9 @@ void MainWindow::connectPort()
 	ui->actionConnect->setChecked(true);
 
 	mTimer->start(18);
+
+	// Wait 3s for the arduino to reboot (thank to the auto reboot feature :(
+//	QThread::sleep(3);
 
 	reloadConfig();
 	setPeriodicRead(
@@ -618,7 +623,7 @@ void MainWindow::notifyReads(const std::set<uint16_t>& addrs)
 			ui->mapEdit->setText(QString::number(double(mMeasures.mMAP-1.0f), 'f', 2));
 			break;
 		case FUEL_PRESSURE:
-			ui->fuelPressEdit->setText(QString::number(double(mMeasures.mFUEL_PRESSURE-1.0f), 'f', 2));
+			ui->fuelPressEdit->setText(QString::number(double(mMeasures.mFUEL_PRESSURE), 'f', 2));
 			break;
 		case THROTTLE:
 		{
@@ -660,6 +665,9 @@ void MainWindow::notifyReads(const std::set<uint16_t>& addrs)
 			break;
 		case MAX_THROTTLE:
 			ui->maxThrottleEdit->setText(QString::number(int(mConfigData.mMaxThrottle)));
+			break;
+		case FUEL_PUMP_PRIME:
+			ui->fuelPumpPrimeEdit->setText(QString::number(int(mConfigData.mFuelPumpPrime)));
 			break;
 		default:
 			{
@@ -733,8 +741,14 @@ void MainWindow::on_baseBoostEdit_editingFinished()
 
 void MainWindow::on_maxThrottleEdit_editingFinished()
 {
-	mConfigData.mMaxThrottle = ui->maxThrottleEdit->text().toFloat();
+	mConfigData.mMaxThrottle = ui->maxThrottleEdit->text().toUInt();
 	fastComWrite({MAX_THROTTLE});
+}
+
+void MainWindow::on_fuelPumpPrimeEdit_editingFinished()
+{
+	mConfigData.mFuelPumpPrime = ui->fuelPumpPrimeEdit->text().toUInt();
+	fastComWrite({FUEL_PUMP_PRIME});
 }
 
 void MainWindow::on_pidPEdit_editingFinished()
@@ -834,7 +848,7 @@ void MainWindow::createTableWidget(QString name,
 			item->setText("--");
 			table->setItem(int(i), int(j), item);
 
-			mAddrToTableItem[addr] = {i, j};
+			mAddrToTableItem[addr] = {int(i), int(j)};
 
 			this->readFastCom({addr, 1, false});
 		}
@@ -851,6 +865,7 @@ void MainWindow::createTableWidget(QString name,
 
 void MainWindow::on_listTable_itemActivated(QListWidgetItem *item)
 {
+	(void) item;
 }
 
 void MainWindow::on_listTable_itemSelectionChanged()
