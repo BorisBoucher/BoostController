@@ -226,6 +226,7 @@
 	
 	0x05a	u8			1		Throttle Max calibration to allow 100% scale even if sensor report only 95%. 0..100 
 	0x05b	u8			50		Fuel presssure, bar, 0..5,12
+	0x05c	u8			1		Fuel pump prime, seconds
 
 0x200 - 0x3ff	2048 16 bits words
 
@@ -282,6 +283,8 @@
 
 FilterOnePole lowpassFilter( LOWPASS, 10.0f ); 
 FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
+FilterOnePole throttleLowpassFilter( LOWPASS, 5.0f );
+FilterOnePole throttleDerHighpassFilter( HIGHPASS, 2.0f );
 // Low pss filter for Air flow data. Should correct the measure aliasing
 // of counting MAG HZ in short period of 10ms (which may lead to very quantified result
 // at low HZ).
@@ -295,7 +298,8 @@ FilterOnePole gAirflowLPF(LOWPASS, 5.0f );
 #define SPEED_IN 11
 #define AIRFLOW_IN 10
 #define SOLENOID_OUT 13
-#define DEBUG_OUT 9
+#define FUEL_PUMP_OUT 9
+#define DEBUG_OUT 8
 //#define SOLENOID_OUT 10
 //#define MAP_IN A6		
 //#define THROTTLE_IN A7	
@@ -310,7 +314,7 @@ FilterOnePole gAirflowLPF(LOWPASS, 5.0f );
 // Other constants
 #define LOOP_PERIOD 10	// loop period in ms
 
-#define CONFIG_VER 1
+#define CONFIG_VER 2
 
 // Configuration tables
 // Config version 0
@@ -385,11 +389,17 @@ struct Config0
 };
 
 // Config ver 1
-struct Config : public Config0
+struct Config1 : public Config0
 {
 	// Max scaling of throttle sensor to report 100% throttle position.
 	// This allow to compensate for small adjustement of throttle (e.g. sensor reporting 95% @WOT)
 	uint8_t	throttleScale = 100;
+};
+
+struct Config : public Config1
+{
+	/// Fuel pump prime in second after power up
+	uint8_t fuelPumpPrime = 5;
 };
 
 Config	gConfig;
@@ -462,9 +472,6 @@ volatile uint32_t	gSPEEDPeriod = INT32_MAX;
 
 // Main loop variables
 uint32_t	gLastEvalCycle = 0;
-float gLastThrottle = 0.0f;
-float gThrottleDerivFilter[16] = {0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0};
-int gThrottleDerivFilterIndex = 0;
 
 bool debugState = false;
 bool rpmOut = false;
@@ -587,6 +594,12 @@ void loadConfig()
 		// Need to write the conf back
 		gConfChanged = true;
 	}
+	else if (vi.mVersionString[8] == 1)
+	{
+		EEPROM.get(16, static_cast<Config1&>(gConfig));
+		// Need to write the conf back
+		gConfChanged = true;
+	}
 	else if (vi.mVersionString[8] == CONFIG_VER)
  	{
 		// Load last version of config, no convertion required
@@ -604,7 +617,7 @@ void loadConfig()
 void setup()
 {
   	// Init serial port @57600 baud, 8N1
-	Serial.begin(57600);
+	Serial.begin( 57600);
 //	Serial.begin(115200);
 
 	Serial.write("init\n");
@@ -620,6 +633,7 @@ void setup()
 	pinMode(SPEED_IN, INPUT_PULLUP);
 	pinMode(AIRFLOW_IN, INPUT_PULLUP);
 	pinMode(SOLENOID_OUT, OUTPUT);
+	pinMode(FUEL_PUMP_OUT, OUTPUT);
 	pinMode(DEBUG_OUT, OUTPUT);
 
 	// Debug pin
@@ -687,6 +701,17 @@ float interpf(float* table, float indexf)
   return table[index1] + delta * alpha;
 }
 
+void manageFuelPump()
+{
+	static bool primePump = true;
+	if (primePump and millis() >= gConfig.fuelPumpPrime * 1000)
+	{
+		primePump = false;
+	}
+
+	digitalWrite(FUEL_PUMP_OUT, primePump);
+}
+
 float pistonPos = 0.0f;
 float spool = 0.0f;
 
@@ -713,29 +738,23 @@ void evalCycle()
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
 	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
 
-	// Read Fuel pressure. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
-	gMeasures.FUEL_PRESS = analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f);
+	// Read Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
+	gMeasures.FUEL_PRESS = (analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
 
 	// Throttle analog read. 0..100% => 0..5V
 	gMeasures.THROTTLE = analogRead(THROTTLE_IN) * (100.0f / 1023.f);
+	gMeasures.THROTTLE = throttleLowpassFilter.input(gMeasures.THROTTLE);
 	// Scale throttle value with max scale correction
 	if (gMeasures.THROTTLE > gConfig.throttleScale)
 	{
 		// We found a greater value, update max scale
 		gConfig.throttleScale = uint8_t(round(gMeasures.THROTTLE));
-		// MAke sure to save it
+		// Make sure to save it
 		gConfChanged = true;
 	}
-	gMeasures.THROTTLE = gMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f; 
-	gThrottleDerivFilter[gThrottleDerivFilterIndex] = (gMeasures.THROTTLE - gLastThrottle) / (LOOP_PERIOD * 0.001f);
-	gThrottleDerivFilterIndex += 1;
-	gThrottleDerivFilterIndex = gThrottleDerivFilterIndex % 16;
-	gMeasures.THROTTLE_DERIV = 0.0f;
-	for (int i=0; i<16; ++i)
-	{
-		gMeasures.THROTTLE_DERIV += gThrottleDerivFilter[i];
-	}
-	gLastThrottle = gMeasures.THROTTLE;
+	gMeasures.THROTTLE = gMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f;
+	// Get high pass filter for throttle derivative
+	gMeasures.THROTTLE_DERIV = throttleDerHighpassFilter.input(gMeasures.THROTTLE) * 1000.0f;
 
 	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200.000µs
 	if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
@@ -794,11 +813,12 @@ void evalCycle()
 	// compute solenoid DC 
 	//--------------------
 	// 1st, choose the target boost in the gear table
+	float targetBoost = 0.0f;
 	{
 		float rpmIndex = (gMeasures.RPM / 1000.0f) - 1;
 		rpmIndex = constrain(rpmIndex, 0, 6);
 		
-		gMeasures.TARGET_BOOST = 
+		targetBoost = 
 				interp(gConfig.boostTable[gMeasures.GEAR-1], rpmIndex) * 0.01f
 				* (gConfig.boostReference);
 	}
@@ -809,21 +829,21 @@ void evalCycle()
 		float throttleIndex = gMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
 		throttleIndex = constrain(throttleIndex, 0, sizeof(gConfig.throttleBoostTable)-1);
 
-		gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
+		targetBoost = targetBoost * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
 
 		// Throttle pos variation correction
+		
 		float throttleDerivIndex = 3 + gMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
 		throttleDerivIndex = constrain(throttleDerivIndex, 0, sizeof(gConfig.throttleDerivBoostTable)-1);
 
-		gMeasures.TARGET_BOOST = gMeasures.TARGET_BOOST * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
-		//    gMeasures.TARGET_BOOST = interp(gConfig.throttleDerivBoostTable, throttleDerivIndex);
-		//    gMeasures.TARGET_BOOST = throttleDerivIndex;
+		targetBoost = targetBoost * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
 
 		// Convert boost value into MAP value, just add the atmo pressure ;)
-		gMeasures.TARGET_BOOST += 1.0f;
+		targetBoost += 1.0f;
 	}
 
-	gMeasures.TARGET_BOOST = targetLowpassFilter.input(gMeasures.TARGET_BOOST);
+	// And finally get target boost filtered
+	gMeasures.TARGET_BOOST = targetLowpassFilter.input(targetBoost);
 	
 	// 2nd, apply PID filter to compute boost error
 	float error = gMeasures.TARGET_BOOST - (max(0.0f, gMeasures.MAP));
@@ -908,6 +928,9 @@ void evalCycle()
 		// switch selonoid off
 		digitalWrite(SOLENOID_OUT, false);
 	}
+
+	// Manage fuel pump prime
+	manageFuelPump();
 	
 	cycleIndex++;
 	if (cycleIndex >= 5)
@@ -987,6 +1010,10 @@ private:
 		else if (addr == 0x05a)
 		{
 			return gConfig.throttleScale;
+		}
+		else if (addr == 0x05c)
+		{
+			return gConfig.fuelPumpPrime;
 		}
 
 		return placeHolder;
@@ -1084,14 +1111,15 @@ private:
 
 	static const constexpr Accessor mByteAccessors[] =
 	{
-		{true,  0x000, 50.0f, false, false},	// MAP
-		{true,  0x001, 1.0f,  false, false},	// Throttle
-		{true,  0x002, 1.0f,  false, false},	// WFDC
-		{false, 0x003, 1.0f,  false, false},	// Gear
-		{true,  0x004, 1.0f,  false, false},	// Engine load
-		{true,  0x005, 1.0f,  false, false},	// CPU load
-		{true,  0x006, 50.0f, false, false},	// Target boost
-		{true,  0x007, 50.0f, false, false},	// Target output
+		//float? addr  factor signed? saved?
+		{true,  0x000,  50.0f, false, false},	// MAP
+		{true,  0x001,   1.0f, false, false},	// Throttle
+		{true,  0x002,   1.0f, false, false},	// WFDC
+		{false, 0x003,   1.0f, false, false},	// Gear
+		{true,  0x004,   1.0f, false, false},	// Engine load
+		{true,  0x005,   1.0f, false, false},	// CPU load
+		{true,  0x006,  50.0f, false, false},	// Target boost
+		{true,  0x007,  50.0f, false, false},	// Target output
 
 		// Sol DC table : boost x load (6x4)
 		BYTE_TABLE_PARAM_LINE4(0x008+4*0)
@@ -1114,15 +1142,17 @@ private:
 		// Boost correction table : throttle deriv 
 		BYTE_TABLE_PARAM_LINE7(0x050)
 
-		{false,  0x057, 1.0f, false, false},	// Test WG
-		{false,  0x058, 1.0f, false, false},	// Version major
-		{false,  0x059, 1.0f, false, false},	// Version minor
-		{false,  0x05a, 1.0f, false, true},		// Throttle sensor adjust
-		{true,   0x05b, 50.0f, false, false},	// Fuel pressure
+		{false,  0x057,  1.0f, false, false},	// Test WG
+		{false,  0x058,  1.0f, false, false},	// Version major
+		{false,  0x059,  1.0f, false, false},	// Version minor
+		{false,  0x05a,  1.0f, false, true},	// Throttle sensor adjust
+		{true,   0x05b, 25.0f, false, false},	// Fuel pressure
+		{false,  0x05c,  1.0f, false, true},	// Fuel pump prime (s)
 	};
 
 	static const constexpr Accessor mWordAccessors[] =
 	{
+		//float? addr  factor signed? saved?
 		{true,  0x800, 1000.0f, false, true},	// Tire circ
 
 		{true,  0x801, 1000.0f, false, true},	// 1st gear ratio
@@ -1133,16 +1163,16 @@ private:
 		{true,  0x806, 1000.0f, false, true},	// 6th gear ratio
 
 		{true,  0x807, 1000.0f, false, true},	// Speed correction
-		{true,  0x809, 1000.0f, false, true},	// Reference boost
+		{true,  0x808, 1000.0f, false, true},	// Reference boost
 
-		{true,  0x80a, 1000.0f, false, true},	// P
+		{true,  0x809, 1000.0f, false, true},	// P
 		{true,  0x80a, 1000.0f, false, true},	// I
 		{true,  0x80b, 1000.0f, false, true},	// D
 
-		{true,  0x80c, 1.0f, false},	// RPM
-		{true,  0x80d, 1.0f, false},	// Speed
-		{true,  0x80e, 1.0f, true},		// Throttle deriv
-		{true,  0x80f, 1.0f, false},	// Air flow Hz
+		{true,  0x80c,    1.0f, false, false},	// RPM
+		{true,  0x80d,    1.0f, false, false},	// Speed
+		{true,  0x80e,    1.0f, true,  false},	// Throttle deriv
+		{true,  0x80f,    1.0f, false, false},	// Air flow Hz
 	};
 
 	uint8_t readByte(uint16_t addr)
@@ -1243,7 +1273,7 @@ private:
 			}
 			else
 			{
-				getFloatParam(accessor.mAddr) = value / accessor.mFactor;
+				getFloatParam(accessor.mAddr) = int32_t(uint32_t(value)) / accessor.mFactor;
 			}
 		}
 		else
@@ -1262,7 +1292,7 @@ private:
 	{
 		auto getAddr = [this] () -> uint16_t
 		{
-			return ((uint16_t(mBuffer[0]) & 0x0f) << 8) + mBuffer[1];
+			return ((uint16_t(mBuffer[0]) & 0x0f) << 8) + uint8_t(mBuffer[1]);
 		};
 
 		auto startSend = [this](uint8_t size)
@@ -1306,12 +1336,13 @@ private:
 			else if ((mBuffer[0] & 0xf8) == 0xA8 && mRxSize == 4)
 			{
 				// 2 bytes word write request
-				writeWord(getAddr(), (uint16_t(mBuffer[2]) << 8) + mBuffer[3]);
-				mBuffer[0] = mBuffer[2];
-				mBuffer[1] = mBuffer[3];
+				writeWord(getAddr(), (uint16_t(mBuffer[2]) << 8) + uint8_t(mBuffer[3]));
+				uint16_t word = readWord(getAddr());
+				mBuffer[0] = static_cast<uint8_t>((word >> 8) & 0xff);
+				mBuffer[1] = static_cast<uint8_t>(word & 0xff);
 				startSend(2);
 			}
-			else if (mRxSize == 4)
+			else if (mRxSize >= 4)
 			{
 				// Framing error, reset
 				reset();
