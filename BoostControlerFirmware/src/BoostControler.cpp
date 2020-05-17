@@ -290,8 +290,8 @@ FilterOnePole throttleDerHighpassFilter( HIGHPASS, 2.0f );
 // at low HZ).
 FilterOnePole gAirflowLPF(LOWPASS, 5.0f ); 
 
-#define VERSION_MAJOR	0
-#define VERSION_MINOR	2
+#define VERSION_MAJOR	1
+#define VERSION_MINOR	0
  
 // I/O Pins 
 #define RPM_IN	12
