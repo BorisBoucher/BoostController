@@ -52,9 +52,9 @@ void setup() {
   pinMode(OUT_VBOOST, OUTPUT);
 
   // Init serial for MUT simulation
-  Serial.begin(1953);
+//  Serial.begin(1953);
 
-//  Serial.begin(9600);
+  Serial.begin(115200);
 
   // Init voltage booster PID
 //  vBoostPID.setMode(1);  // auto mode
@@ -105,19 +105,20 @@ void loop()
       // Increase speed
       gState.mSpeed += 1.0f;
     }
-    if (not digitalRead(IN_MINUS) and gState.mSpeed > 0.0f)
+    else if (not digitalRead(IN_MINUS) and gState.mSpeed > 0.0f)
     {
       // Increase speed
       gState.mSpeed -= 1.0f;
     }
 
     // Compute RPM based on speed, gear shift @6000RPM
-    static const float gearRatios[] = {		
+    static const float gearRatios[] = 
+      {	
         12.200f,
-         6.908f,
-         4.383f,
-         3.271f,
-         2.620f,
+        6.908f,
+        4.383f,
+        3.271f,
+        2.620f,
       };
 
     static const float tyreCirc = 2.02f;
@@ -159,40 +160,53 @@ void loop()
     gState.mMafHalfPeriod = uint32_t(mafHalfPeriod * 1000000.0f);
   }
 
+  static bool outSpeed = false;
+  static bool outRpm = false;
+  static bool outMaf = false;
+
   // Manage speed and rpm pulses
   if (gState.mSpeedHalfPeriod > 0 and now - gState.mLastSpeedPulse > gState.mSpeedHalfPeriod)
   {
-    digitalWrite(OUT_SPEED, not digitalRead(OUT_SPEED));
-    gState.mLastSpeedPulse = now;
+    outSpeed = not outSpeed;
+    digitalWrite(OUT_SPEED, outSpeed);
+    gState.mLastSpeedPulse += gState.mSpeedHalfPeriod;
   }
   if (gState.mRpmHalfPeriod > 0 and now - gState.mLastRpmPulse > gState.mRpmHalfPeriod)
   {
-    digitalWrite(OUT_RPM, not digitalRead(OUT_RPM));
-    gState.mLastRpmPulse = now;
+    outRpm = not outRpm;
+    digitalWrite(OUT_RPM, outRpm);
+    gState.mLastRpmPulse += gState.mRpmHalfPeriod;
   }
   if (gState.mMafHalfPeriod > 0 and now - gState.mLastMafPulse > gState.mMafHalfPeriod)
   {
-    digitalWrite(OUT_MAF, not digitalRead(OUT_MAF));
-    gState.mLastMafPulse = now;
+    outMaf = not outMaf;
+    digitalWrite(OUT_MAF, outMaf);
+    gState.mLastMafPulse += gState.mMafHalfPeriod;
   }
 
-  // // Serial display
-  // static uint32_t lastDisplay = 0;
-  // if (now - lastDisplay > 1000000)
-  // {
-  //   Serial.print("VTGT = ");
-  //   Serial.println(gState.mTargetV / 1000.0);
-  //   Serial.print("VIN  = ");
-  //   Serial.println(gState.mInputV / 1000.0);
-  //   Serial.write("VOUT = ");
-  //   Serial.println(gState.mOutputV / 1000.0);
-  //   Serial.write("PWM = ");
-  //   Serial.println(OCR2B);
-  //   Serial.print("Loop/s = ");
-  //   Serial.println(gState.mLoopCount);
-  //   gState.mLoopCount = 0;
-  //   lastDisplay = now;
-  // }
+  // Serial display
+  static uint32_t lastDisplay = 0;
+  if (now - lastDisplay > 100000)
+  {
+    // Serial.print("VTGT = ");
+    // Serial.println(gState.mTargetV / 1000.0);
+    // Serial.print("VIN  = ");
+    // Serial.println(gState.mInputV / 1000.0);
+    // Serial.write("VOUT = ");
+    // Serial.println(gState.mOutputV / 1000.0);
+    // Serial.write("PWM = ");
+    // Serial.println(OCR2B);
+    // Serial.print("Loop/s = ");
+    // Serial.println(gState.mLoopCount);
+    // Serial.print("Speed = ");
+    // Serial.println(gState.mSpeed);
+    // Serial.print("Freq = ");
+    // Serial.print(gState.mSpeedHalfPeriod);
+    // Serial.print(", ");
+    // Serial.println(gState.mRpmHalfPeriod);
+    gState.mLoopCount = 0;
+    lastDisplay = now;
+  }
 
   // MUT responder
   if (Serial.available() > 0)
