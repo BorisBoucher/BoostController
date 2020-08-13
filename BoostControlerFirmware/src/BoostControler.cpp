@@ -14,7 +14,7 @@
     - Speed (Hz)
     - MAP (Analog), 0..5V, 1V/bar
     - Throttle (Analog), 0..5V (0..100%)
-    - OBD-1 ECU diagnostic link
+	- Fuel pressure (Analog), 
     
   Internal value:
     - Current gear is deduced from speed and RPM values. 
@@ -23,12 +23,11 @@
        * current gear to limit torque on transmission in first gear,!
        * RPM value (WOT load target can be set by step of 500 RPM) 
     
-  From these inputs, the boost controler compute the boost set point (% or duty cycle).
-  Then a PWM signal for the waste gate solenoid is generated on output.
+  From these inputs, the boost controler compute the boost set point (target boost in bar).
+  Then a PWM signal for the waste gate solenoid is generated on output with a conversion table.
 
   Configuration and monitoring:
-    - The controler communicated with a bluetooth link with a PC
-    program that allow to:
+    - The controler communicated with a CAN link to:
       * Configure the boost controler parameter (target boost, correction table, servo parameters...)
       * Receive real time data collected by the boost controler to display and/or record for later analysis.
 
@@ -185,10 +184,16 @@
 	* The BC confirm the new calibration by producing 3 pulses of 1/4s @50% DC on the BC sol.
 
 
-  Configuration & logging protocol (serial)
+  Configuration & logging protocol (CAN)
   -----------------------------------------
-  Conf&Log protocol allow to read acquisition data or internal states and read or write the parameter tables.
+  Conf&Log protocol allow to read/publish acquisition data or internal states and read or write the parameter tables.
   
+  The protocol is based on CAN bus. CAN id is used to identify parameter or acquisition data.
+  Data are encoded as 1 or 2 bytes, with integer or fixed point encoding. 
+
+
+
+
   There are 4 commands:
 	Read byte, command 0
 	write byte, command 1
@@ -253,16 +258,32 @@
   Pin mapping
   -----------
   
-	RPM input		  :	PIN 12, Port B4
-	Speed input		  :	PIN 11, Port B3
-	MAF Hz			  : PIN 10, Port B2
-	Throttle input    :	PIN A7, ADC7
-	MAP input	 	  :	PIN A6, ADC6
+	SPI for CAN MCP2515:
+		#CS		PIN 10, Port PB2
+		MOSI	PIN 11, Port PB3
+		MISO	PIN 12, Port PB4
+		SCK		PIN 13, Port PB5
+		INT		PIN 3,  Port PD3 (INT1)
+
+	Engine/car input:
+		RPM				: PIN 7, port PD7
+		SPEED			: PIN 6, port PD6
+		MAF				: PIN 5, port PD5
+		Throttle input	: PIN A7, ADC7, port AC7
+		MAP input		: PIN A6, ADC6, port AC6
 	
-	Solenoid output	:	PIN 13, PB5
-    Debug RPM replay:   PIN 10, PB2
-	Serial TX		:	PIN 1, PD1
-	Serial RX		:	PIN 0, PD0
+	Output:
+		Solenoid output : PIN 4, port PD4
+		Fuel pump prime : PIN 9, port PB1
+	
+	Debug output:
+		Debug output    : PIN 19, port PC5
+		Debug SPEED_OUT : PIN 16, port PC2
+		Debug RPM_OUT 	: PIN 15, port PC1
+
+	Other:
+		Serial TX		:	PIN 1, Port PD1
+		Serial RX		:	PIN 0, Port PD0
 	
   Frequency mesurement
   --------------------
@@ -275,11 +296,22 @@
 	
 	For each parameter, a 4 values circular buffer is used to provide a cheap low pass filter.
 	
+
+	Main loop and CAN support
+	-------------------------
+	
+	Main loop process acquired RPM, SPEED and throttle input 100 times par secondd.
+	In the same times, interrupt are used to:
+		* Detect changes on RPM, SPEED and MAF input to capture event date for later frequency computation
+		in main loop.
+		Quick reaction of this interrupt is critical for accurate frequancy measurement.
+		* Receive notification from CAN module that something happenned, either TX done or
+		RX available. This interrupt just set a flag that will be processed by the main loop.
+ 
  */
 
 #include <filters.h>
 #include <EEPROM.h>
-
 
 FilterOnePole mapLowPassFilter( LOWPASS, 5.0f ); 
 FilterOnePole boostHighpassFilter( HIGHPASS, 0.1f ); 
@@ -294,21 +326,20 @@ FilterOnePole gAirflowLPF(LOWPASS, 5.0f );
 #define VERSION_MAJOR	1
 #define VERSION_MINOR	0
  
+
 // I/O Pins 
-#define RPM_IN	12
-#define SPEED_IN 11
-#define AIRFLOW_IN 10
-#define SOLENOID_OUT 13
+#define RPM_IN	7
+#define SPEED_IN 6
+#define AIRFLOW_IN 5
+#define SOLENOID_OUT 4
 #define FUEL_PUMP_OUT 9
-#define DEBUG_OUT 8
-//#define SOLENOID_OUT 10
-//#define MAP_IN A6		
-//#define THROTTLE_IN A7	
+// Analog I/O
 #define MAP_IN A5    
 #define THROTTLE_IN A6  
 #define FUEL_PRESS_IN A7  
 
 // Debug PIN
+#define DEBUG_OUT 18
 #define SPEED_OUT 16
 #define RPM_OUT 15
 
@@ -479,6 +510,36 @@ bool rpmOut = false;
 bool speedOut = false;
 #define TOGGLE_DEBUG     digitalWrite(DEBUG_OUT, debugState);    debugState = !debugState;
 
+class CAN_MPC2515
+{
+	bool mInterruptPending = false;
+public:
+
+	// init SPI and configure MPC
+	void begin()
+	{
+		
+	}
+
+	void update()
+	{
+		// Process pending interrupt
+	}
+
+	void notifyInterrupt()
+	{
+		mInterruptPending = true;
+	}
+};
+
+CAN_MPC2515 gCanDriver;
+
+// INT1 ISR (from CAN controler)
+ISR(INT0_vect)
+{
+	// just store the interrupt request in CAN driver for asynchronous processing.
+	gCanDriver.notifyInterrupt();
+}
 
 // Pin Change ISR
 ISR (PCINT0_vect)
@@ -544,8 +605,8 @@ ISR (PCINT0_vect)
 void pciSetup(byte pin)
 {
     *digitalPinToPCMSK(pin) |= bit (digitalPinToPCMSKbit(pin));  // enable pin
-    PCIFR  |= bit (digitalPinToPCICRbit(pin)); // clear any outstanding interrupt
-    PCICR  |= bit (digitalPinToPCICRbit(pin)); // enable interrupt for the group
+    PCIFR |= bit (digitalPinToPCICRbit(pin)); // clear any outstanding interrupt
+    PCICR |= bit (digitalPinToPCICRbit(pin)); // enable interrupt for the group
 }
 
 struct VersionInfo

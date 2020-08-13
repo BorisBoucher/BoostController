@@ -1,0 +1,9 @@
+Conversion to CAN BUS interface instead of serial.
+
+* Define CAN usage, remap fastcomm id to CAN and choose data encoding.
+* Remapping IO to free CAN IO.
+* Add MPC2515 driver on SPI (with interrupt)
+* New COM class to replace fastcom.
+    * Switch to periodic send
+    * Support parameter request
+    * Support parameter write
