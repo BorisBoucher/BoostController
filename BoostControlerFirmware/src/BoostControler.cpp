@@ -281,8 +281,9 @@
 #include <EEPROM.h>
 
 
+FilterOnePole mapLowPassFilter( LOWPASS, 5.0f ); 
 FilterOnePole boostHighpassFilter( HIGHPASS, 0.1f ); 
-FilterOnePole targetLowpassFilter( LOWPASS, 2.0f );
+FilterOnePole targetLowpassFilter( LOWPASS, 5.0f );
 FilterOnePole throttleLowpassFilter( LOWPASS, 5.0f );
 FilterOnePole throttleDerHighpassFilter( HIGHPASS, 2.0f );
 // Low pss filter for Air flow data. Should correct the measure aliasing
@@ -737,6 +738,8 @@ void evalCycle()
 	// Analog read : very costly when done without interrupt : 100µs per read !
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
 	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
+	// Filter MAP
+	gMeasures.MAP = mapLowPassFilter.input(gMeasures.MAP);
 
 	// Read Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
 	gMeasures.FUEL_PRESS = (analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
