@@ -1,6 +1,11 @@
 *.csv
 debug/*
+release/*
+target/*
 *.pro.user.*
 Makefile
 Makefile.*
 *.autosave
+*.msl
+BoostControlerConfigurator_setup.exe
+*.pro.user

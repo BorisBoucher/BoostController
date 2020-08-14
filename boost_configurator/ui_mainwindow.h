@@ -1167,7 +1167,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", nullptr));
+        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "Boost Controler Configurator", nullptr));
         actionStart_Log->setText(QApplication::translate("MainWindow", "Start Log", nullptr));
 #ifndef QT_NO_SHORTCUT
         actionStart_Log->setShortcut(QApplication::translate("MainWindow", "F1", nullptr));

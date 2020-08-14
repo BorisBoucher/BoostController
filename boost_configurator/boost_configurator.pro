@@ -64,4 +64,5 @@ FORMS += \
         setting.ui
 
 DISTFILES += \
-	boost_configurator.res
+	boost_configurator.res \
+	make_installer.bat
