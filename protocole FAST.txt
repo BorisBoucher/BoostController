@@ -14,9 +14,9 @@ comming from the logger/controler PC.
 WARNING : USB serial converter:
 -------------------------------
 USB to serial converter (like FTDI RS232 converter) are subject to high latency regarding small
-request/response message dur to serial line buffering and USB packet transfert.
+request/response message due to serial line buffering and USB packet transfert.
 By default, the FTDI driver instruct the chip to wait 16 ms before sending received serial data to 
-host computer. This is a killer for the fast protocol as it's based on small req/resp message.
+host computer. This is a killer for the FAST protocol as it's based on small req/resp message.
 
 First test showed that the host computer needs to wait for 16ms after each request before receiving
 the response, even when the arduino chip responded in less than a few µs (this was checked by
@@ -24,6 +24,9 @@ observing the RX and TX serial line with a logic analyser).
 
 After configuring the USB serial port to use a timeout of 1ms and an USB packet size of 64 bytes 
 (rather than 4096), the speed of request/response cycle raised from 50/s to more than 600/s.
+
+Note: The same test and configuration were done with a bluetooth serial adaptor without great result. The BT serial
+adaptor was not able to do more than a 10th of req/resp per second.
 
 Message Format:
 ---------------
