@@ -1121,7 +1121,7 @@ public:
 	}
 };
 
-CAN_MCP515 gCanDriver;
+CAN_MCP2515 gCanDriver;
 
 // INT1 ISR (from CAN controler)
 ISR(INT0_vect)
