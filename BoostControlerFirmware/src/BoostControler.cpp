@@ -510,9 +510,598 @@ bool rpmOut = false;
 bool speedOut = false;
 #define TOGGLE_DEBUG     digitalWrite(DEBUG_OUT, debugState);    debugState = !debugState;
 
-class CAN_MPC2515
+class CAN_MCP2515
 {
+#pragma pack(push, 1)
+	struct RegisterMap
+	{
+		struct SIDEID_t
+		{
+			union 
+			{
+				struct
+				{
+					uint8_t EID0;
+					uint8_t EID8;
+					uint8_t SIDL;
+					uint8_t SIDH;
+				};
+				struct
+				{
+					uint32_t	EID		: 18;
+					uint32_t	EXIDE 	:  1;
+					uint32_t	unused1 :  1;
+					uint32_t	SID 	: 11;
+				};
+			};
+		};
+		// struct RXFilter
+		// {
+		// 	union 
+		// 	{
+		// 		struct
+		// 		{
+		// 			uint8_t SIDH;
+		// 			uint8_t SIDL;
+		// 			uint8_t EID8;
+		// 			uint8_t EID0;
+		// 		};
+		// 		struct
+		// 		{
+		// 			uint32_t	SID 	: 11;
+		// 			uint32_t	unused1 :  1;
+		// 			uint32_t	EXIDE 	:  1;
+		// 			uint32_t	EID		: 18;
+		// 		};
+		// 	};
+		// };
+
+		// struct RXMask
+		// {
+		// 	union
+		// 	{
+		// 		struct
+		// 		{
+		// 			uint8_t SIDH;
+		// 			uint8_t SIDL;
+		// 			uint8_t EID8;
+		// 			uint8_t EID0;
+		// 		};
+		// 		struct
+		// 		{
+		// 			uint32_t	SID 	: 11;
+		// 			uint32_t	unused1 :  1;
+		// 			uint32_t	EXIDE 	:  1;
+		// 			uint32_t	EID		: 18;
+		// 		}
+		// 	};
+		// };
+
+		struct TXBuffer
+		{
+			union
+			{
+				uint8_t CTRL;
+				struct
+				{
+					uint8_t TXP		: 2;
+					uint8_t unused2	: 1;
+					uint8_t TXREQ	: 1;
+					uint8_t TXERR	: 1;
+					uint8_t MLOA	: 1;
+					uint8_t ABTF	: 1;
+					uint8_t unused1	: 1;
+				};
+			} CTRL;
+			SIDEID_t SIDEID;
+			struct 
+			{
+				uint8_t DLC			: 4;
+				uint8_t	unused2		: 2;
+				uint8_t RTR			: 1;
+				uint8_t unused1		: 1;
+			} DLC;
+
+			uint8_t D[8];
+		};
+
+		struct RXBuffer
+		{
+			union
+			{
+				uint8_t CTRL;
+				struct
+				{
+					uint8_t FILHIT0	: 1;
+					uint8_t BUKT1	: 1;
+					uint8_t BUKT	: 1;
+					uint8_t RXRTR	: 1;
+					uint8_t unused2	: 1;
+					uint8_t RXM0	: 1;
+					uint8_t RXM1	: 1;
+					uint8_t unused1	: 1;
+				};
+			} CTRL;
+			zmledfjzepfiojze
+			SIDEID_t SIDEID;
+			struct 
+			{
+				uint8_t DLC			: 4;
+				uint8_t	unused2		: 2;
+				uint8_t RTR			: 1;
+				uint8_t unused1		: 1;
+			} DLC;
+
+			uint8_t D[8];
+		};
+
+		struct CANSTAT
+		{
+			uint8_t unused2	: 1;
+			uint8_t	ICOD	: 3;
+			uint8_t	unused1	: 1;
+			uint8_t	OPMOD	: 3;
+		};
+		struct CANCTRL
+		{
+			uint8_t CLKPRE	: 2;
+			uint8_t CLKEN	: 1;
+			uint8_t	OSM		: 1;
+			uint8_t	ABAT	: 1;
+			uint8_t	REQOP	: 3;
+		};
+
+
+		// Register COL 0
+		SIDEID_t	RXF0;
+		SIDEID_t	RXF1;
+		SIDEID_t	RXF2;
+
+		struct BFPCTRL_t
+		{
+			uint8_t B0BFM	: 1;
+			uint8_t B1BFM	: 1;
+			uint8_t B0BFE	: 1;
+			uint8_t B1BFE	: 1;
+			uint8_t B0BFS	: 1;
+			uint8_t B1BFS	: 1;
+			uint8_t unused	: 2;
+		} BFPCTRL;
+		struct TXRTSCTRL_t
+		{
+			uint8_t B0RTSM	: 1;
+			uint8_t B1RTSM	: 1;
+			uint8_t B2RTSM	: 1;
+			uint8_t B0RTS	: 1;
+			uint8_t B1RTS	: 1;
+			uint8_t B2RTS	: 1;
+			uint8_t unused	: 2;
+		} TXRTSCTRL;
+
+		CANSTAT		CANSTAT0;
+		CANCTRL		CANCTRL0;
+
+		// Register COL 1
+		SIDEID_t	RXF3;
+		SIDEID_t	RXF4;
+		SIDEID_t	RXF5;
+
+		uint8_t		TEC;
+		uint8_t		REC;
+		CANSTAT		CANSTAT1;
+		CANCTRL		CANCTRL1;
+
+		// Register COL 2
+		SIDEID_t	RXM0;
+		SIDEID_t	RXM1;
+		struct CNF3_t
+		{
+			uint8_t PHSEG2	: 3;
+			uint8_t unused	: 3;
+			uint8_t WAKFIL	: 1;
+			uint8_t	SOF		: 1;
+		} CNF3;
+		struct CNF2_t
+		{
+			uint8_t PRSEG1	: 3;
+			uint8_t PHSEG1	: 3;
+			uint8_t SAM		: 1;
+			uint8_t	BTLMODE	: 1;
+		} CNF2;
+		struct CNF1_t
+		{
+			uint8_t BRP		: 6;
+			uint8_t	SJW		: 2;
+		} CNF1;
+		struct CANINTE_t
+		{
+			uint8_t RX0IE	: 1;
+			uint8_t RX1IE	: 1;
+			uint8_t TX0IE	: 1;
+			uint8_t TX1IE	: 1;
+			uint8_t TX2IE	: 1;
+			uint8_t ERRIE	: 1;
+			uint8_t WAKIE	: 1;
+			uint8_t MERRE	: 1;
+		} CANINTE;
+		struct CANINTF_t
+		{
+			uint8_t RX0IF	: 1;
+			uint8_t RX1IF	: 1;
+			uint8_t TX0IF	: 1;
+			uint8_t TX1IF	: 1;
+			uint8_t TX2IF	: 1;
+			uint8_t ERRIF	: 1;
+			uint8_t WAKIF	: 1;
+			uint8_t MERRF	: 1;
+		} CANINTF;
+		struct EFLG_t
+		{
+			uint8_t EWARN	: 1;
+			uint8_t RXWAR	: 1;
+			uint8_t TXWAR	: 1;
+			uint8_t RXEP	: 1;
+			uint8_t TXEP	: 1;
+			uint8_t TXB0	: 1;
+			uint8_t RX0OVR	: 1;
+			uint8_t RX1OVR	: 1;
+		} EFLG;
+		CANSTAT		CANSTAT2;
+		CANCTRL		CANCTRL2;
+
+		// Register COL 3
+		TXBuffer	TXB0;
+		CANSTAT		CANSTAT3;
+		CANCTRL		CANCTRL3;
+
+		// Register COL 4
+		TXBuffer	TXB1;
+		CANSTAT		CANSTAT4;
+		CANCTRL		CANCTRL4;
+
+		// Register COL 5
+		TXBuffer	TXB2;
+		CANSTAT		CANSTAT5;
+		CANCTRL		CANCTRL5;
+	};
+#pragma pack(pop)
+
+
+	// MCP2515 register map
+	// RX Filter 0
+	static const constexpr uint8_t	RXF0SIDH = 0b00000000;
+	static const constexpr uint8_t	RXF0SIDL = 0b00000001;
+	static const constexpr uint8_t	RXF0EID8 = 0b00000010;
+	static const constexpr uint8_t	RXF0EID0 = 0b00000011;
+	// RX Filter 1
+	static const constexpr uint8_t	RXF1SIDH = 0b00000100;
+	static const constexpr uint8_t	RXF1SIDL = 0b00000101;
+	static const constexpr uint8_t	RXF1EID8 = 0b00000110;
+	static const constexpr uint8_t	RXF1EID0 = 0b00000111;
+	// RX Filter 2
+	static const constexpr uint8_t	RXF2SIDH = 0b00001000;
+	static const constexpr uint8_t	RXF2SIDL = 0b00001001;
+	static const constexpr uint8_t	RXF2EID8 = 0b00001010;
+	static const constexpr uint8_t	RXF2EID0 = 0b00001011;
+	// RX Filter 3
+	static const constexpr uint8_t	RXF3SIDH = 0b00010000;
+	static const constexpr uint8_t	RXF3SIDL = 0b00010001;
+	static const constexpr uint8_t	RXF3EID8 = 0b00010010;
+	static const constexpr uint8_t	RXF3EID0 = 0b00010011;
+	// RX Filter 4
+	static const constexpr uint8_t	RXF4SIDH = 0b00010100;
+	static const constexpr uint8_t	RXF4SIDL = 0b00010101;
+	static const constexpr uint8_t	RXF4EID8 = 0b00010110;
+	static const constexpr uint8_t	RXF4EID0 = 0b00010111;
+	// RX Filter 5
+	//    Filter n Standard IDentifier register High
+	//		SID[10:3]
+	static const constexpr uint8_t	RXF5SIDH = 0b00011000;
+	//    Filter n Standard IDentifier register Low
+	static const constexpr uint8_t	RXF5SIDL = 0b00011001;
+	//		SID[2:0]
+	static const constexpr uint8_t	RXF5SIDL_SID2   = 0b10000000;
+	static const constexpr uint8_t	RXF5SIDL_SID1   = 0b01000000;
+	static const constexpr uint8_t	RXF5SIDL_SID0   = 0b00100000;
+	//		Extended Identifier Enable
+	static const constexpr uint8_t	RXF5SIDL_EXIDE  = 0b00001000;
+	//		EID[17:16]
+	static const constexpr uint8_t	RXF5SIDL_EID17  = 0b00000010;
+	static const constexpr uint8_t	RXF5SIDL_EID16  = 0b00000001;
+	//    Filter n Extended 1 register High
+	//		=> EID[15:8]
+	static const constexpr uint8_t	RXF5EID8 = 0b00011010;
+	//    Filter n Extended 1 register Low
+	//		=> EID[7:0]
+	static const constexpr uint8_t	RXF5EID0 = 0b00011011;
+	// RX Mask 0
+	static const constexpr uint8_t	RXM0SIDH = 0b00100000;
+	static const constexpr uint8_t	RXM0SIDL = 0b00100001;
+	static const constexpr uint8_t	RXM0EID8 = 0b00100010;
+	static const constexpr uint8_t	RXM0EID0 = 0b00100011;
+	// RX Mask 1
+	//	Mask n Standard IDentifier High
+	//		Contains SID[10:3]
+	static const constexpr uint8_t	RXM1SIDH = 0b00100100;
+	//	Mask n Standard IDentifier Low
+	static const constexpr uint8_t	RXM1SIDL = 0b00100101;
+	//		Contains SID[2:0]
+	static const constexpr uint8_t	RXMxSIDL_SID2  = 0b10000000;
+	static const constexpr uint8_t	RXMxSIDL_SID1  = 0b01000000;
+	static const constexpr uint8_t	RXMxSIDL_SID0  = 0b00100000;
+	static const constexpr uint8_t	RXMxSIDL_EID17 = 0b00000010;
+	static const constexpr uint8_t	RXMxSIDL_EID16 = 0b00000001;
+	//	Mask n Extended Identifier high/low
+	static const constexpr uint8_t	RXM1EID8 = 0b00100110;
+	static const constexpr uint8_t	RXM1EID0 = 0b00100111;
+	// TX Buffer 0
+	static const constexpr uint8_t	TXB0CTRL = 0b00110000;
+	static const constexpr uint8_t	TXB0SIDH = 0b00110001;
+	static const constexpr uint8_t	TXB0SIDL = 0b00110010;
+	static const constexpr uint8_t	TXB0EID8 = 0b00110011;
+	static const constexpr uint8_t	TXB0EID0 = 0b00110100;
+	static const constexpr uint8_t	TXB0DLC  = 0b00110101;
+	static const constexpr uint8_t	TXB0D0   = 0b00110110;
+	static const constexpr uint8_t	TXB0D1   = 0b00110111;
+	static const constexpr uint8_t	TXB0D2   = 0b00111000;
+	static const constexpr uint8_t	TXB0D3   = 0b00111001;  
+	static const constexpr uint8_t	TXB0D4   = 0b00111010;
+	static const constexpr uint8_t	TXB0D5   = 0b00111011;
+	static const constexpr uint8_t	TXB0D6   = 0b00111100;
+	static const constexpr uint8_t	TXB0D7   = 0b00111101;
+	// TX Buffer 1
+	static const constexpr uint8_t	TXB1CTRL = 0b01000000;
+	static const constexpr uint8_t	TXB1SIDH = 0b01000001;
+	static const constexpr uint8_t	TXB1SIDL = 0b01000010;
+	static const constexpr uint8_t	TXB1EID8 = 0b01000011;
+	static const constexpr uint8_t	TXB1EID0 = 0b01000100;
+	static const constexpr uint8_t	TXB1DLC  = 0b01000101;
+	static const constexpr uint8_t	TXB1D0   = 0b01000110;
+	static const constexpr uint8_t	TXB1D1   = 0b01000111;
+	static const constexpr uint8_t	TXB1D2   = 0b01001000;
+	static const constexpr uint8_t	TXB1D3   = 0b01001001;  
+	static const constexpr uint8_t	TXB1D4   = 0b01001010;
+	static const constexpr uint8_t	TXB1D5   = 0b01001011;
+	static const constexpr uint8_t	TXB1D6   = 0b01001100;
+	static const constexpr uint8_t	TXB1D7   = 0b01001101;
+	// TX Buffer 2
+	static const constexpr uint8_t	TXB2CTRL = 0b01010000;
+	static const constexpr uint8_t	TXB2SIDH = 0b01010001;
+	static const constexpr uint8_t	TXB2SIDL = 0b01010010;
+	static const constexpr uint8_t	TXB2EID8 = 0b01010011;
+	static const constexpr uint8_t	TXB2EID0 = 0b01010100;
+	static const constexpr uint8_t	TXB2DLC  = 0b01010101;
+	static const constexpr uint8_t	TXB2D0   = 0b01010110;
+	static const constexpr uint8_t	TXB2D1   = 0b01010111;
+	static const constexpr uint8_t	TXB2D2   = 0b01011000;
+	static const constexpr uint8_t	TXB2D3   = 0b01011001;  
+	static const constexpr uint8_t	TXB2D4   = 0b01011010;
+	static const constexpr uint8_t	TXB2D5   = 0b01011011;
+	static const constexpr uint8_t	TXB2D6   = 0b01011100;
+	static const constexpr uint8_t	TXB2D7   = 0b01011101;
+	// RX Buffer 0
+	static const constexpr uint8_t	RXB0CTRL = 0b01100000;
+	//    Receive Buffer n Standard IDentifier High : SID[10:3]
+	static const constexpr uint8_t	RXB0SIDH = 0b01100001;
+	//    Receive Buffer n Standard IDentifier Low
+	static const constexpr uint8_t	RXB0SIDL = 0b01100010;
+	//		SID[2:0]
+	static const constexpr uint8_t	RXBnSIDL_SID2  = 0b10000000;
+	static const constexpr uint8_t	RXBnSIDL_SID1  = 0b01000000;
+	static const constexpr uint8_t	RXBnSIDL_SID0  = 0b00100000;
+	//		Standard Frame Remote Transmit Request Received
+	static const constexpr uint8_t	RXBnSIDL_SRR   = 0b00010000;
+	//		Extended Identifier flag
+	static const constexpr uint8_t	RXBnSIDL_IDE   = 0b00001000;
+	//		EID[17:16]
+	static const constexpr uint8_t	RXBnSIDL_EID17 = 0b00000010;
+	static const constexpr uint8_t	RXBnSIDL_EID16 = 0b00000001;
+	//    Receive Buffer n Extended Identifier Hight, EID[15:8]
+	static const constexpr uint8_t	RXB0EID8 = 0b01100011;
+	//    Receive Buffer n Extended Identifier Low, EID[7:0]
+	static const constexpr uint8_t	RXB0EID0 = 0b01100100;
+	//    Receive Buffer n Data Lenght Code
+	static const constexpr uint8_t	RXB0DLC  = 0b01100101;
+	//		Extended Frame Remote Transmission Request
+	static const constexpr uint8_t	RXBxDLC_RTR  = 0b01000000;
+	//		Data Lenght Code DLC[3:0]
+	static const constexpr uint8_t	RXBxDLC_DLC3 = 0b01000000;
+	static const constexpr uint8_t	RXBxDLC_DLC2 = 0b01000000;
+	static const constexpr uint8_t	RXBxDLC_DLC1 = 0b01000000;
+	static const constexpr uint8_t	RXBxDLC_DLC0 = 0b01000000;
+	static const constexpr uint8_t	RXB0D0   = 0b01100110;
+	static const constexpr uint8_t	RXB0D1   = 0b01100111;
+	static const constexpr uint8_t	RXB0D2   = 0b01101000;
+	static const constexpr uint8_t	RXB0D3   = 0b01101001;  
+	static const constexpr uint8_t	RXB0D4   = 0b01101010;
+	static const constexpr uint8_t	RXB0D5   = 0b01101011;
+	static const constexpr uint8_t	RXB0D6   = 0b01101100;
+	static const constexpr uint8_t	RXB0D7   = 0b01101101;
+	// RX Buffer 1
+	static const constexpr uint8_t	RXB1CTRL = 0b01110000;
+	static const constexpr uint8_t	RXB1SIDH = 0b01110001;
+	static const constexpr uint8_t	RXB1SIDL = 0b01110010;
+	static const constexpr uint8_t	RXB1EID8 = 0b01110011;
+	static const constexpr uint8_t	RXB1EID0 = 0b01110100;
+	static const constexpr uint8_t	RXB1DLC  = 0b01110101;
+	static const constexpr uint8_t	RXB1D0   = 0b01110110;
+	static const constexpr uint8_t	RXB1D1   = 0b01110111;
+	static const constexpr uint8_t	RXB1D2   = 0b01111000;
+	static const constexpr uint8_t	RXB1D3   = 0b01111001;  
+	static const constexpr uint8_t	RXB1D4   = 0b01111010;
+	static const constexpr uint8_t	RXB1D5   = 0b01111011;
+	static const constexpr uint8_t	RXB1D6   = 0b01111100;
+	static const constexpr uint8_t	RXB1D7   = 0b01111101;
+	// Control register
+	static const constexpr uint8_t	BFPCTRL   = 0b00001100;
+	static const constexpr uint8_t	BFPCTRL_B1BFS   = 0b00100000;
+	static const constexpr uint8_t	BFPCTRL_B0BFS   = 0b00010000;
+	static const constexpr uint8_t	BFPCTRL_B1BFE   = 0b00001000;
+	static const constexpr uint8_t	BFPCTRL_B0BFE   = 0b00000100;
+	static const constexpr uint8_t	BFPCTRL_B1BFM   = 0b00000010;
+	static const constexpr uint8_t	BFPCTRL_B0BFM   = 0b00000001;
+	static const constexpr uint8_t	TXRTSCTRL = 0b00001101;
+	static const constexpr uint8_t	TXRTSCTRL_B2RTS   = 0b00100000;
+	static const constexpr uint8_t	TXRTSCTRL_B1RTS   = 0b00010000;
+	static const constexpr uint8_t	TXRTSCTRL_B0RTS   = 0b00001000;
+	static const constexpr uint8_t	TXRTSCTRL_B2RTSM  = 0b00000100;
+	static const constexpr uint8_t	TXRTSCTRL_B1RTSM  = 0b00000010;
+	static const constexpr uint8_t	TXRTSCTRL_B0RTSM  = 0b00000001;
+	static const constexpr uint8_t	CANSTAT   = 0b00001110;
+	// CANSTAT details
+	//   Operation Mode
+	static const constexpr uint8_t	CANSTAT_OPMOD2  = 0b10000000;
+	static const constexpr uint8_t	CANSTAT_OPMOD1  = 0b01000000;
+	static const constexpr uint8_t	CANSTAT_OPMOD0  = 0b00100000;
+	//   Composed valid operating mode
+	static const constexpr uint8_t	CANSTAT_REQOP_Normal     = 0b00000000;
+	static const constexpr uint8_t	CANSTAT_REQOP_Sleep      = 0b00100000;
+	static const constexpr uint8_t	CANSTAT_REQOP_Loopback   = 0b01000000;
+	static const constexpr uint8_t	CANSTAT_REQOP_ListenOnly = 0b01100000;
+	static const constexpr uint8_t	CANSTAT_REQOP_SetConf    = 0b10000000;
+	//   Interrupt flag Code 
+	static const constexpr uint8_t	CANSTAT_ICOD2   = 0b00001000;
+	static const constexpr uint8_t	CANSTAT_ICOD1   = 0b00000100;
+	static const constexpr uint8_t	CANSTAT_ICOD0   = 0b00000010;
+	//   Composed Interrupt flag Code
+	static const constexpr uint8_t	CANSTAT_ICOD_NoIt      = 0b00000000;
+	static const constexpr uint8_t	CANSTAT_ICOD_ErrorIt   = 0b00000010;
+	static const constexpr uint8_t	CANSTAT_ICOD_WakeupIt  = 0b00000100;
+	static const constexpr uint8_t	CANSTAT_ICOD_TXB0It    = 0b00000110;
+	static const constexpr uint8_t	CANSTAT_ICOD_TXB1It    = 0b00001000;
+	static const constexpr uint8_t	CANSTAT_ICOD_TXB2It    = 0b00001010;
+	static const constexpr uint8_t	CANSTAT_ICOD_RXB0It    = 0b00001100;
+	static const constexpr uint8_t	CANSTAT_ICOD_RXB1It    = 0b00001110;
+
+	static const constexpr uint8_t	CANCTRL   = 0b00001111;
+	// CANCTRL details
+	//   Request Operation Mode
+	static const constexpr uint8_t	CANCTRL_REQOP2    = 0b10000000;
+	static const constexpr uint8_t	CANCTRL_REQOP1    = 0b01000000;
+	static const constexpr uint8_t	CANCTRL_REQOP0    = 0b00100000;
+	//   Composed valid REQ OP
+	static const constexpr uint8_t	CANCTRL_REQOP_Normal     = 0b00000000;
+	static const constexpr uint8_t	CANCTRL_REQOP_Sleep      = 0b00100000;
+	static const constexpr uint8_t	CANCTRL_REQOP_Loopback   = 0b01000000;
+	static const constexpr uint8_t	CANCTRL_REQOP_ListenOnly = 0b01100000;
+	static const constexpr uint8_t	CANCTRL_REQOP_SetConf    = 0b10000000;
+	//   Abort All Pending Transmissions
+	static const constexpr uint8_t	CANCTRL_ABAT      = 0b00010000;
+	//   One Shot Mode
+	static const constexpr uint8_t	CANCTRL_OSM       = 0b00001000;
+	//   CLOCKOUT Pin Enable
+	static const constexpr uint8_t	CANCTRL_CLKEN     = 0b00000100;
+	//   CLOCKOUT pin prescaler 
+	static const constexpr uint8_t	CANCTRL_CLKPRE1   = 0b00000010;
+	static const constexpr uint8_t	CANCTRL_CLKPRE0   = 0b00000001;
+	//   Composed clockout system clock prescaler
+	static const constexpr uint8_t	CANCTRL_CLKPRE_DIV1 = 0b00000000;
+	static const constexpr uint8_t	CANCTRL_CLKPRE_DIV2 = 0b00000001;
+	static const constexpr uint8_t	CANCTRL_CLKPRE_DIV4 = 0b00000010;
+	static const constexpr uint8_t	CANCTRL_CLKPRE_DIV8 = 0b00000011;
+
+	// Transmit Error Counter
+	static const constexpr uint8_t	TEC       = 0b00011100;
+	// Receive Error Counter
+	static const constexpr uint8_t	REC       = 0b00011101;
+	// Configuration register 3
+	static const constexpr uint8_t	CNF3      = 0b00101000;
+	// Configuration register 3 details
+	//    Start Of Frame on CLOCKOUT (if clockout is enabled)
+	static const constexpr uint8_t	CNF3_SOF     = 0b10000000;
+	//    Wake up filter anable bit
+	static const constexpr uint8_t	CNF3_WAKFIL  = 0b01000000;
+	//    PS2 lenght. => (PS2[0:2] + 1) * Tq, mininum of 2 required
+	static const constexpr uint8_t	CNF3_PHSEG22 = 0b00000100;
+	static const constexpr uint8_t	CNF3_PHSEG21 = 0b00000010;
+	static const constexpr uint8_t	CNF3_PHSEG20 = 0b00000001;
+	// Configuration register 2
+	static const constexpr uint8_t	CNF2      = 0b00101001;
+	// Configuration register 2 details
+	//    PS2 bit time length
+	//		1 : PS2 is determined by PHSEG2[2:0]
+	//		0 : PS2 is greater of PS1 and IPT  (2 Tq)
+	static const constexpr uint8_t	SNF2_BLTMODE = 0b10000000;
+	//    SAMple point configuration
+	//		1 : Sampled 3 times at sample point
+	//		0 : Sampled once at sample point 
+	static const constexpr uint8_t	SNF2_SAM     = 0b01000000;
+	//    PS1 Length. => (PHSEG1[2:0] + 1) * Tq
+	static const constexpr uint8_t	SNF2_PHSEG12 = 0b00100000;
+	static const constexpr uint8_t	SNF2_PHSEG11 = 0b00010000;
+	static const constexpr uint8_t	SNF2_PHSEG10 = 0b00001000;
+	//    Propagation Segment Length. => (PRSEG[2:0] + 1) * Tq
+	static const constexpr uint8_t	SNF2_PRSEG2  = 0b00000100;
+	static const constexpr uint8_t	SNF2_PRSEG1  = 0b00000010;
+	static const constexpr uint8_t	SNF2_PRSEG0  = 0b00000001;
+	// Configuration register 1 details
+	static const constexpr uint8_t	CNF1      = 0b00101010;
+	//    Synchronsation Jump Width Length
+	//		=> SJW[1:0] * Tq
+	static const constexpr uint8_t	SNF1_SJW1   = 0b10000000;
+	static const constexpr uint8_t	SNF1_SJW0   = 0b01000000;
+	//    Baud Rate Prescaler
+	//		Tq = 2 * (BRP[5:0] + 1) / Fosc
+	static const constexpr uint8_t	SNF1_BRP5   = 0b00100000;
+	static const constexpr uint8_t	SNF1_BRP4   = 0b00010000;
+	static const constexpr uint8_t	SNF1_BRP3   = 0b00001000;
+	static const constexpr uint8_t	SNF1_BRP2   = 0b00000100;
+	static const constexpr uint8_t	SNF1_BRP1   = 0b00000010;
+	static const constexpr uint8_t	SNF1_BRP0   = 0b00000001;
+	static const constexpr uint8_t	CANINTE   = 0b00101011;
+	static const constexpr uint8_t	CANINTE_MERRE  = 0b10000000;	// Message error it
+	static const constexpr uint8_t	CANINTE_WAKIE  = 0b01000000;	// Wake up it
+	static const constexpr uint8_t	CANINTE_ERRIE  = 0b00100000;	// Error it
+	static const constexpr uint8_t	CANINTE_TX2IE  = 0b00010000;	// TX buffer empty
+	static const constexpr uint8_t	CANINTE_TX1IE  = 0b00001000;
+	static const constexpr uint8_t	CANINTE_TX0IE  = 0b00000100;
+	static const constexpr uint8_t	CANINTE_RX1IE  = 0b00000010;	// RX buffer full
+	static const constexpr uint8_t	CANINTE_RX0IE  = 0b00000001;
+	static const constexpr uint8_t	CANINTF   = 0b00101100;
+	static const constexpr uint8_t	CANINTF_MERRF  = 0b10000000;
+	static const constexpr uint8_t	CANINTF_WAKIF  = 0b01000000;
+	static const constexpr uint8_t	CANINTF_ERRIF  = 0b00100000;
+	static const constexpr uint8_t	CANINTF_TX2IF  = 0b00010000;
+	static const constexpr uint8_t	CANINTF_TX1IF  = 0b00001000;
+	static const constexpr uint8_t	CANINTF_TX0IF  = 0b00000100;
+	static const constexpr uint8_t	CANINTF_RX1IF  = 0b00000010;
+	static const constexpr uint8_t	CANINTF_RX0IE  = 0b00000001;
+	// Error FLaG
+	static const constexpr uint8_t	EFLG      = 0b00101101;
+	static const constexpr uint8_t	EFLG_RX1OVR    = 0b10000000;	// RX buffer overflow
+	static const constexpr uint8_t	EFLG_RX0OVR    = 0b01000000;
+	static const constexpr uint8_t	EFLG_TXB0      = 0b00100000;	// Bus-off error
+	static const constexpr uint8_t	EFLG_TXEP      = 0b00010000;	// TX error/passive
+	static const constexpr uint8_t	EFLG_RXEP      = 0b00001000;	// RX error/passive
+	static const constexpr uint8_t	EFLG_TXWAR     = 0b00000100;	// TX error Warning
+	static const constexpr uint8_t	EFLG_RXWAR     = 0b00000010;	// RX error Warning
+	static const constexpr uint8_t	EFLG_EWARN     = 0b00000001;	// Error Warning
+	// TXBxCTRL (0, 1, 2)
+	static const constexpr uint8_t	TXBxCTRL_ABTF    = 0b01000000;
+	static const constexpr uint8_t	TXBxCTRL_MLOA    = 0b00100000;
+	static const constexpr uint8_t	TXBxCTRL_TXERR   = 0b00010000;
+	static const constexpr uint8_t	TXBxCTRL_TXREQ   = 0b00001000;
+	static const constexpr uint8_t	TXBxCTRL_TXP1    = 0b00000010;
+	static const constexpr uint8_t	TXBxCTRL_TXP0    = 0b00000001;
+	// RXB0CTRL
+	static const constexpr uint8_t	RXB0CTRL_RXM1    = 0b01000000;
+	static const constexpr uint8_t	RXB0CTRL_RXM0    = 0b00100000;
+	static const constexpr uint8_t	RXB0CTRL_RXRTR   = 0b00001000;
+	static const constexpr uint8_t	RXB0CTRL_BUKT    = 0b00000100;
+	static const constexpr uint8_t	RXB0CTRL_BUKT1   = 0b00000010;
+	static const constexpr uint8_t	RXB0CTRL_FILHIT0 = 0b00000001;
+	// RXB1CTRL
+	static const constexpr uint8_t	RXB1CTRL_RXM1    = 0b01000000;
+	static const constexpr uint8_t	RXB1CTRL_RXM0    = 0b00100000;
+	static const constexpr uint8_t	RXB1CTRL_RXRTR   = 0b00001000;
+	static const constexpr uint8_t	RXB1CTRL_FILHIT2 = 0b00000100;
+	static const constexpr uint8_t	RXB1CTRL_FILHIT1 = 0b00000010;
+	static const constexpr uint8_t	RXB1CTRL_FILHIT0 = 0b00000001;
+
+
+
 	bool mInterruptPending = false;
+	
 public:
 
 	// init SPI and configure MPC
@@ -532,7 +1121,7 @@ public:
 	}
 };
 
-CAN_MPC2515 gCanDriver;
+CAN_MCP515 gCanDriver;
 
 // INT1 ISR (from CAN controler)
 ISR(INT0_vect)
@@ -602,6 +1191,7 @@ ISR (PCINT0_vect)
 	}
 }
 
+// Configure PIN change interrupt
 void pciSetup(byte pin)
 {
     *digitalPinToPCMSK(pin) |= bit (digitalPinToPCMSKbit(pin));  // enable pin
