@@ -25,19 +25,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += D:\dev\perso\BoostController\snxcomm
-#win32:CONFIG(release, debug|release): LIBS += -LD:\dev\perso\BoostController\snxcomm\release
-#else:win32:CONFIG(debug, debug|release): LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
-#LIBS += -LD:\dev\perso\BoostController\snxcomm\%{CurrentBuild:Type}
-LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
-#@debug {
-#LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
-#}
-#@release {
-#LIBS += -LD:\dev\perso\BoostController\snxcomm\release
-#}
-LIBS += -lsnxcomm
 LIBS += -lws2_32
+
+# Include for snxcomm library
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../snxcomm/release/ -lsnxcomm
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../snxcomm/debug/ -lsnxcomm
+else:unix: LIBS += -L$$PWD/../snxcomm/ -lsnxcomm
+
+INCLUDEPATH += $$PWD/../snxcomm
+DEPENDPATH += $$PWD/../snxcomm
 
 SOURCES += \
         main.cpp \

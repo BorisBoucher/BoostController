@@ -4,12 +4,14 @@ IF EXIST target (
 	rmdir /Q /S target
 )
 
+SET BUILD_TYPE=%1
+
 REM Create output directory
 MKDIR target
 
 REM Deploy dependencies, resources and binary
-windeployqt --dir target debug\boost_configurator.exe
-copy debug\boost_configurator.exe target
+windeployqt --dir target %BUILD_TYPE%\boost_configurator.exe
+copy %BUILD_TYPE%\boost_configurator.exe target
 copy *.png target
 
 REM run installer generator
