@@ -25,16 +25,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += D:\dev\perso\BoostControler\snxcomm
-#win32:CONFIG(release, debug|release): LIBS += -LD:\dev\perso\BoostControler\snxcomm\release
-#else:win32:CONFIG(debug, debug|release): LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
-#LIBS += -LD:\dev\perso\BoostControler\snxcomm\%{CurrentBuild:Type}
-LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
+INCLUDEPATH += D:\dev\perso\BoostController\snxcomm
+#win32:CONFIG(release, debug|release): LIBS += -LD:\dev\perso\BoostController\snxcomm\release
+#else:win32:CONFIG(debug, debug|release): LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
+#LIBS += -LD:\dev\perso\BoostController\snxcomm\%{CurrentBuild:Type}
+LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
 #@debug {
-#LIBS += -LD:\dev\perso\BoostControler\snxcomm\debug
+#LIBS += -LD:\dev\perso\BoostController\snxcomm\debug
 #}
 #@release {
-#LIBS += -LD:\dev\perso\BoostControler\snxcomm\release
+#LIBS += -LD:\dev\perso\BoostController\snxcomm\release
 #}
 LIBS += -lsnxcomm
 LIBS += -lws2_32

@@ -1,6 +1,6 @@
 #include <windows.h>
 
-IDI_ICON1	ICON	DISCARDABLE	"D:\\dev\\perso\\BoostControler\\boost_configurator\\turbo.ico"
+IDI_ICON1	ICON	DISCARDABLE	"D:\\dev\\perso\\BoostController\\boost_configurator\\turbo.ico"
 
 VS_VERSION_INFO VERSIONINFO
 	FILEVERSION 0,0,0,0

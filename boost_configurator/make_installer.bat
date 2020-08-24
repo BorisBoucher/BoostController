@@ -12,5 +12,5 @@ windeployqt --dir target debug\boost_configurator.exe
 copy debug\boost_configurator.exe target
 copy *.png target
 
-REM run instaleur generator
+REM run installer generator
 "c:\Program Files (x86)\Inno Setup 6\iscc.exe" installer_script.iss
