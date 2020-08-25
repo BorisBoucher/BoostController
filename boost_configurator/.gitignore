@@ -1,0 +1,11 @@
+*.csv
+debug/*
+release/*
+target/*
+*.pro.user.*
+Makefile
+Makefile.*
+*.autosave
+*.msl
+BoostControllerConfigurator_setup.exe
+*.pro.user
