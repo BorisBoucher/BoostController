@@ -6,3 +6,5 @@ release
 __pycache__
 *.pro.user*
 target
+Gerber
+*.FCStd1
