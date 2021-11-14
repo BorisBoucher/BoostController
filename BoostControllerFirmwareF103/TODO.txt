@@ -1,0 +1,3 @@
+* Porting code from arduino/nano to STM32 BluePill 128k
+* Integrated support for CAN interface with SNX standardized parameters API
+ 
