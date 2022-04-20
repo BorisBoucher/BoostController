@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "BoostController-rescue")(type "KiCad")(uri "${KIPRJMOD}/BoostController-rescue.kicad_sym")(options "")(descr ""))
+)
