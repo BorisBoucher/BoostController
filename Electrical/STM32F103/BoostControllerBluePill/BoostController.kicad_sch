@@ -3577,10 +3577,10 @@
     (property "Reference" "D12" (id 0) (at 109.982 180.4416 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Value" "3.3V" (id 1) (at 109.982 182.753 90)
+    (property "Value" "" (id 1) (at 109.982 182.753 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "Diodes_SMD:D_MELF_Handsoldering" (id 2) (at 107.95 181.61 0)
+    (property "Footprint" "" (id 2) (at 107.95 181.61 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "ZM4728A" (id 3) (at 107.95 181.61 0)
@@ -4125,7 +4125,7 @@
       (reference "D11") (unit 1) (value "3.3V") (footprint "Diode_SMD:D_MELF_Handsoldering")
     )
     (path "/00000000-0000-0000-0000-00006199f232"
-      (reference "D12") (unit 1) (value "3.3V") (footprint "Diodes_SMD:D_MELF_Handsoldering")
+      (reference "D12") (unit 1) (value "3.3V") (footprint "Diode_SMD:D_MELF_Handsoldering")
     )
     (path "/97326434-3dd6-43f2-b2d8-f89ab733a64c"
       (reference "D13") (unit 1) (value "3.3V") (footprint "Diode_SMD:D_MELF_Handsoldering")
