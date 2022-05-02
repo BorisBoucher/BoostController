@@ -48,7 +48,13 @@
           "min_clearance": 0.508
         }
       },
-      "diff_pair_dimensions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
       "drc_exclusions": [
         "silk_over_copper|107930000|124460000|854c8829-725c-43a9-9fc5-c324d25b9b34|5d2f3ae9-e953-4b8b-8ec2-7e1e969f3fae",
         "silk_over_copper|110176000|124460000|854c8829-725c-43a9-9fc5-c324d25b9b34|49dd41aa-f677-45d8-941f-226f9b63a72f",
@@ -124,8 +130,20 @@
         "min_via_diameter": 0.39999999999999997,
         "use_height_for_length_calcs": true
       },
-      "track_widths": [],
-      "via_dimensions": [],
+      "track_widths": [
+        0.0,
+        0.25
+      ],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        },
+        {
+          "diameter": 0.8,
+          "drill": 0.4
+        }
+      ],
       "zones_allow_external_fillets": false,
       "zones_use_no_outline": true
     },
