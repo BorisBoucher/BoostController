@@ -38,6 +38,16 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
+extern ADC_HandleTypeDef hadc1;
+extern DMA_HandleTypeDef hdma_adc1;
+
+extern CAN_HandleTypeDef hcan;
+
+extern RTC_HandleTypeDef hrtc;
+
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -93,5 +103,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

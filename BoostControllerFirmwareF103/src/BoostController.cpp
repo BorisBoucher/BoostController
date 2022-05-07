@@ -1,15 +1,18 @@
 //#include <avr/io.h> // Standard include for AVR
-#include <algorithm>
+#include <atomic>
 #include <stdint.h>
 #include <stddef.h>
 #include <cmath>
-#include <FilterDerivative.h>
-#include <FilterOnePole.h>
-#include <Filters.h>
-#include <FilterTwoPole.h>
+#include <functional>
 #include <FloatDefine.h>
 #include <RunningStatistics.h>
+#include "std_helper.hpp"
+#include "config.hpp"
 #include "core/Inc/main.h"
+#include "BoostController.hpp"
+#include "InputCapture.hpp"
+#include "AnalogInput.hpp"
+
 //#include <EEPROM.h>
 
 /*
@@ -307,35 +310,19 @@
 	Main loop and CAN support
 	-------------------------
 	
-	Main loop process acquired RPM, SPEED and throttle input 100 times par secondd.
+	Main loop process acquires RPM, SPEED and throttle input 100 times per second.
 	In the same times, interrupt are used to:
 		* Detect changes on RPM, SPEED and MAF input to capture event date for later frequency computation
 		in main loop.
-		Quick reaction of this interrupt is critical for accurate frequancy measurement.
+		Quick reaction of this interrupt is critical for accurate frequency measurement.
 		* Receive notification from CAN module that something happenned, either TX done or
 		RX available. This interrupt just set a flag that will be processed by the main loop.
  
  */
 
-long getTick()
-{
-	// TODO
-	return 0;
-}
-
-FilterOnePole mapLowPassFilter(getTick, LOWPASS, 5.0f); 
-FilterOnePole boostHighpassFilter(getTick, HIGHPASS, 0.1f); 
-FilterOnePole targetLowpassFilter(getTick, LOWPASS, 5.0f);
-FilterOnePole throttleLowpassFilter(getTick, LOWPASS, 5.0f);
-FilterOnePole throttleDerHighpassFilter(getTick, HIGHPASS, 2.0f);
-// Low pss filter for Air flow data. Should correct the measure aliasing
-// of counting MAG HZ in short period of 10ms (which may lead to very quantified result
-// at low HZ).
-FilterOnePole gAirflowLPF(getTick, LOWPASS, 5.0f); 
 
 #define VERSION_MAJOR	1
 #define VERSION_MINOR	0
- 
 
 // I/O Pins 
 #define RPM_IN	7
@@ -353,132 +340,15 @@ FilterOnePole gAirflowLPF(getTick, LOWPASS, 5.0f);
 #define SPEED_OUT 16
 #define RPM_OUT 15
 
-// Other constants
-#define LOOP_PERIOD 10	// loop period in ms
+// // Other constants
+// #define LOOP_PERIOD 10	// loop period in ms
 
-#define CONFIG_VER 2
-
-// Configuration tables
-// Config version 0
-struct Config0
-{
-	// Type circumference in meter
-	float	tyreCircum = 2.02f;
-	// conversion factor from speed sensor Hz to km/h
-	float	speedFactor = 0.73f;
-	float	gearRatios[6] = 
-	{
-		12.200f,
-		 6.908f,
-		 4.383f,
-		 3.271f,
-		 2.620f,
-		 1.0f
-	};
-	
-/*	float	pidParam[3] = 
-	{
-		0.5f,
-		0.0f,
-		0.0f
-	};
-  */
-	float pidParam[3] = 
-	{
-		0.8f,
-		2.7f,
-		0.2f
-	};
-	
-	// 6 row (1 per gear), 7 RPM column values (1000 to 7000 RPM => boost %)
-	uint8_t	boostTable[6][7] = 
-	{
-		{  70,  70,  70,  70,  70,  70,  70},
-		{  70, 100, 100, 100, 100, 100,  80},
-		{  70, 100, 100, 100, 100, 100,  80},
-		{  70, 100, 100, 100, 100, 100,  80},
-		{  70, 100, 100, 100, 100, 100,  80},
-		{  70, 100, 100, 100, 100, 100,  80},
-	};
-
-	// Boost throttle table, 6 values (0 to 100% throttle => boost %)
-	uint8_t throttleBoostTable[6] = 
-	{
-		0, 20, 40, 60, 80, 100
-	};
-  
-	// Boost throttle' table, 7 values (-1000%/s ti 1000%/s)
-	uint8_t throttleDerivBoostTable[7] =
-	{
-		0, 0, 0, 100, 110, 120, 130
-	};
-  
-	// Boost reference for boost table, relative pressure
-	float	boostReference = 0.7f;
-	
-	// Duty cycle table in function of boost vs engine load
-	// 6 rows for 0.0, 0.25,0.5,0.75,1.0,1.25bar (relative pressure).
-	// 4 columns for 25, 50, 75, 100% load
-	uint8_t	dutyCycleTable[6][4] =
-	{
-		{ 0, 0, 0, 0 },
-		{25, 25, 25, 25},
-		{40, 40, 40, 40},
-		{70, 70, 70, 70},
-		{90, 90, 90, 90},
-		{100, 100, 100, 100},
-	};
-};
-
-// Config ver 1
-struct Config1 : public Config0
-{
-	// Max scaling of throttle sensor to report 100% throttle position.
-	// This allow to compensate for small adjustment of throttle (e.g. sensor reporting 95% @WOT)
-	uint8_t	throttleScale = 100;
-};
-
-struct Config : public Config1
-{
-	/// Fuel pump prime in second after power up
-	uint8_t fuelPumpPrime = 5;
-};
 
 Config	gConfig;
 
 /// Indicator set when the conf need to be saved
 bool	gConfChanged = false;
 
-// Measurement and computation table
-struct Measurement
-{
-	float	RPM = 0.0f;
-	// Speed in km/h
-	float	SPEED = 0.0f;
-	// MAP in Bar  
-	float	MAP = 0.0f;
-	// Fuel pressure in BAR
-	float 	FUEL_PRESS = 0.0f;
-	// Throttle in % (0..100)
-	float	THROTTLE = 0.0f;
-	// Throttle deriv in %/s (-1000..1000%/s)
-	float	THROTTLE_DERIV = 0.0f;
-	// Air flow HZ
-	float AIR_FLOW = 0.0f;
-	// Solenoid duty cycle in % (0..100)
-	float	SOL_DC = 0.0f;
-	// Computed gear (0..5 or 6)
-	uint8_t	GEAR = 0;
-	// Target boost in Bar (relative)
-	float	TARGET_BOOST = 0.0f;
-	// Computed target output boost (output of PID corrector)
-	float TARGET_OUTPUT = 0.0f;
-	// Engine load (%)
-	float	LOAD = 0.0f;
-	// Boost controller chip load (%)
-	float	CHIP_LOAD = 0.0f;
-};
-Measurement	gMeasures;
 
 struct Simulation
 {
@@ -497,7 +367,7 @@ Info	gInfo;
  
 // PIN change interrupt variables
 uint8_t	 	gLastInputPinState = 0;
-uint32_t	gLastRPMDate = 0;
+//uint32_t	gLastRPMDate = 0;
 uint32_t	gRPMBuffer[4] = {0,0,0,0};
 uint8_t		gRPMBufferHead = 0; 
 uint32_t	gRPMAccum = 0;
@@ -508,12 +378,12 @@ uint32_t	gSPEEDAccum = 0;
 // Count the number of raising edge on MAF input
 uint8_t		gAirFlowAccum = 0;
 // RPM period in µs, 0 means no signal.
-volatile uint32_t	gRPMPeriod = INT32_MAX;
+//volatile uint32_t	gRPMPeriod = INT32_MAX;
 // SPEED period in µs, 0 means no signal.
-volatile uint32_t	gSPEEDPeriod = INT32_MAX;
+//volatile uint32_t	gSPEEDPeriod = INT32_MAX;
 
 // Main loop variables
-uint32_t	gLastEvalCycle = 0;
+// uint32_t	gLastEvalCycle = 0;
 
 bool debugState = false;
 bool rpmOut = false;
@@ -523,21 +393,35 @@ bool speedOut = false;
 
 uint32_t micros()
 {
-	// TODO implement me
+	// Systick run @72Mhz, with a reload @72000 for 1ms interrupt
+	uint32_t tickBefore;
+	uint32_t tickAfter;
+	uint32_t ms;
 
-	return 0UL;
+	// Make sure we read ms and tick counter outside of a reload interrupt
+	do
+	{
+		tickBefore = SysTick->VAL;
+		ms = HAL_GetTick();
+		tickAfter = SysTick->VAL;
+	} while (tickBefore < tickAfter);
+
+	// Compute micro by combining ms integration and elapsed systick counter.
+	uint32_t micro = ms * 1000 + (72000 - tickAfter) / 72000;
+
+	return micro;
 }
 
-enum AnalogInput
-{
-	MAP_IN,
-	FUEL_PRESS_IN,
-	OIL_TEMP_IN,
-	WATER_TEMP_IN,
-	OIL_PRES_IN,
-	THROTTLE_IN,
-	AFR_IN
-};
+// enum AnalogInput
+// {
+// 	MAP_IN,
+// 	FUEL_PRESS_IN,
+// 	OIL_TEMP_IN,
+// 	WATER_TEMP_IN,
+// 	OIL_PRES_IN,
+// 	THROTTLE_IN,
+// 	AFR_IN
+// };
 
 float analogRead(AnalogInput input)
 {
@@ -556,101 +440,43 @@ void digitalWrite(DigitalOut output, bool state)
 	// TODO
 }
 
-template <typename T, typename U, typename V>
-T constrain(T value, const U min, const V max)
-{
-	T ret;
-	if (value < min)
-	{
-		ret = min;
-	}
-	else if (value > max)
-	{
-		ret = max;
-	}
-	else
-	{
-		ret = value;
-	}
-
-	return ret;
-}
-
-// Pin Change ISR
-//ISR (PCINT0_vect)
+// template <typename T, typename U, typename V>
+// T constrain(const T value, const U min, const V max)
 // {
-// 	// Read port B status
-// 	uint8_t b = PINB;
-
-// 	// get current time
-// 	uint32_t now = micros();
-// 	// check for changed event
-// 	uint8_t changed = b ^ gLastInputPinState;
-// 	// save last nown state of port B
-// 	gLastInputPinState = b;
-  
-// 	//  check RPM raising edge
-// 	if ((changed & 0x10) && (b & 0x10))
+// 	T ret;
+// 	if (value < min)
 // 	{
-// 		rpmOut = !rpmOut;
-
-// 		// RPM changed !
-// 		uint32_t period = now - gLastRPMDate;
-// 		gLastRPMDate = now;
-// 		gRPMAccum -= gRPMBuffer[gRPMBufferHead];
-// 		gRPMBuffer[gRPMBufferHead++] = period;
-// 		gRPMBufferHead &= 0x3; 
-// 		gRPMAccum += period;
-		
-// 		gRPMPeriod = gRPMAccum>>2;
+// 		ret = min;
 // 	}
-// 	// Check SPEED raising edge
-// 	if ((changed & 0x08) && (b & 0x08))
+// 	else if (value > max)
 // 	{
-// 		speedOut = !speedOut;
-
-// 		// Speed changed !
-// 		uint32_t period = now - gLastSPEEDDate;
-// 		gLastSPEEDDate = now;
-// 		gSPEEDAccum -= gSPEEDBuffer[gSPEEDBufferHead];
-// 		gSPEEDBuffer[gSPEEDBufferHead++] = period;
-// 		gSPEEDBufferHead &= 0x3; 
-// 		gSPEEDAccum += period;
-		
-// 		gSPEEDPeriod = gSPEEDAccum>>2;
+// 		ret = max;
 // 	}
-// 	// Check AIR FLOW raising edge
-// 	if ((changed & 0x04) && (b & 0x04))
+// 	else
 // 	{
-// 		++gAirFlowAccum;
+// 		ret = value;
 // 	}
+
+// 	return ret;
 // }
-
-// Configure PIN change interrupt
-void pciSetup(uint8_t pin)
-{
-    // *digitalPinToPCMSK(pin) |= bit (digitalPinToPCMSKbit(pin));  // enable pin
-    // PCIFR |= bit (digitalPinToPCICRbit(pin)); // clear any outstanding interrupt
-    // PCICR |= bit (digitalPinToPCICRbit(pin)); // enable interrupt for the group
-}
 
 struct VersionInfo
 {
 	char mVersionString[10] = "SNX_BC_vx";
 
-  bool operator ==(const VersionInfo& other) const
-  {
-    bool ok = true;
-    for (size_t i=0; i<sizeof(mVersionString) && ok; ++i)
-    {
-      ok &= mVersionString[i] == other.mVersionString[i];
-    }
-    return ok;
-  }
-  bool operator !=(const VersionInfo& other) const
-  {
-    return !(*this == other);
-  }
+	bool operator==(const VersionInfo &other) const
+	{
+		bool ok = true;
+		for (size_t i = 0; i < sizeof(mVersionString) && ok; ++i)
+		{
+			ok &= mVersionString[i] == other.mVersionString[i];
+		}
+		return ok;
+	}
+	bool operator!=(const VersionInfo &other) const
+	{
+		return !(*this == other);
+	}
 };
 
 void saveConfig()
@@ -665,7 +491,7 @@ void saveConfig()
 void loadConfig()
 {
 	// VersionInfo refVi;
-  	// refVi.mVersionString[8] = CONFIG_VER;
+	// refVi.mVersionString[8] = CONFIG_VER;
 	// VersionInfo vi;
 	// EEPROM.get(0, vi);
 
@@ -701,9 +527,11 @@ void loadConfig()
 	// Serial.write("Conf loaded\n");
 }
 
-void setup()
+void BoostController::setup()
 {
-  	// Init serial port @57600 baud, 8N1
+	gAnalogConverter.setup();
+
+	// Init serial port @57600 baud, 8N1
 	// Serial.begin( 57600);
 
 	// Serial.write("init\n");
@@ -737,19 +565,13 @@ void setup()
 	// pciSetup(AIRFLOW_IN);
 }
 
-// PID state variables
-float gErrorInteg = 0.0f;
-float gErrorDeriv = 0.0f;
-float gLastMAP = 0.0f;
-float gLastError = 0.0f;
-
-void computeGear()
+void BoostController::computeGear()
 {
 	// compute gear 
 	// Eval is done by computing the current speed to RPM ratio and founding the nearest 
 	// corresponding gear ratio
-	float engineHz = gMeasures.RPM / 60.0f;
-	float speedMs = (gMeasures.SPEED / 3600.0f) * 1000.0f;
+	float engineHz = mMeasures.RPM / 60.0f;
+	float speedMs = (mMeasures.SPEED / 3600.0f) * 1000.0f;
 	float revPerMeter = engineHz / speedMs;
 	float gearRatio = revPerMeter
 						* gConfig.tyreCircum;
@@ -766,47 +588,136 @@ void computeGear()
 		}
 	}
 	
-	gMeasures.GEAR = gear;
+	mMeasures.GEAR = gear;
 }
 
-float interp(uint8_t* table, float indexf)
+float interp(uint8_t *table, float indexf)
 {
-  int index1 = (int) floor(indexf);
-  int index2 = (int) ceil(indexf);
-  float alpha = indexf - index1;
-  float delta = float(table[index2]) - float(table[index1]);
-  return table[index1] + delta * alpha;
+	int index1 = (int)floor(indexf);
+	int index2 = (int)ceil(indexf);
+	float alpha = indexf - index1;
+	float delta = float(table[index2]) - float(table[index1]);
+	return table[index1] + delta * alpha;
 }
 
-float interpf(float* table, float indexf)
+float interpf(float *table, float indexf)
 {
-  int index1 = (int) floor(indexf);
-  int index2 = (int) ceil(indexf);
-  float alpha = indexf - index1;
-  float delta = table[index2] - table[index1];
-  return table[index1] + delta * alpha;
+	int index1 = (int)floor(indexf);
+	int index2 = (int)ceil(indexf);
+	float alpha = indexf - index1;
+	float delta = table[index2] - table[index1];
+	return table[index1] + delta * alpha;
 }
 
-float pistonPos = 0.0f;
-float spool = 0.0f;
+//float pistonPos = 0.0f;
+//float spool = 0.0f;
 
-void evalCycle()
+// struct SensorCorrectionLUT
+// {
+// 	float mRawValue;
+// 	float mOutputValue;
+// };
+
+
+// 0..5V to Water temp (°C)
+SensorCorrectionLUT waterTempLUT[] = 
+{
+	{  2.5f,  20.0f},
+	{  2.6f,  40.0f},
+	{  2.8f,  60.0f},
+	{  3.2f,  80.0f},
+	{  4.0f, 100.0f},
+	{  5.0f, 150.0f},
+};
+
+#define sizeof_array(arr) (sizeof(arr) / sizeof(arr[0]))
+
+float RPMHz = 0.0;
+float speedHz = 0.0;
+float MAFHz = 0.0;
+
+void BoostController::evalCycle()
 {
 	static uint32_t previousLoopDate = 0;
 
-	// Sample analog input
-	HAL_ADC_Start(&hadc1);
-	HAL_ADC_PollForConversion(&hadc1, 1);
-	// Read The ADC Conversion Result & Map It To PWM DutyCycle
-	AD_RES = HAL_ADC_GetValue(&hadc1);
+	gAnalogConverter.loop();
+
+	// MAP_IN,
+	// FUEL_PRESS_IN,
+	// OIL_TEMP_IN,
+	// WATER_TEMP_IN,
+	// OIL_PRES_IN,
+	// THROTTLE_IN,
+	// AFR_IN
+
+	// Hz reading on timer 2, APB1, 72MHz base freq
+	// 65536 @ 72MHz => 1098 overflow/s, way too more!
+	// * 400Hz for RPM
+	// * 220Hz for speed
+	// * 2800Hz for MAF
+	//		357.14µs
+	//	 2795Hz
+	//		357.78µs
+	//		Require 100ns rez => 10Mz => 152 overflow/s
+	//		429s overflow max on 32 bits before 32 bits overflow
+	//
+	// Real value:
+	//	72MHz clock, div 7 => 10.285MHz timer clock => 97ns rez, 6.37ms per period
+	//
+	// Low frequency limits
+	// * 1Hz for RPM
+	//		10.2 tick per pulse
+	//		156 periods
+	//		
+	// * 5Hz for speed
+	//		32 periods
+	// * 10Hz for MAF
+	//		16 periods
+
+	const constexpr float IC_TICK_DUR = 1.0 / (72'000'000 / 7.0);
+
+	// float RPMHz = 0.0;
+	// float speedHz = 0.0;
+	// float MAFHz = 0.0;
+
+	// capture read
+	InputCapture inputCapture;
+	__disable_irq();
+	inputCapture = gInputCapture.mValues;
+	__enable_irq();
+
+	if (inputCapture.mRPM != 0)
+	{
+		RPMHz = 1 / (inputCapture.mRPM * IC_TICK_DUR);
+	}
+	else
+	{
+		RPMHz = 0;
+	}
+	if (inputCapture.mSpeed != 0)
+	{
+		speedHz = 1 / (inputCapture.mSpeed * IC_TICK_DUR);
+	}
+	else
+	{
+		speedHz = 0;
+	}
+	if (inputCapture.mMAF != 0)
+	{
+		MAFHz = 1 / (inputCapture.mMAF * IC_TICK_DUR);
+	}
+	else
+	{
+		MAFHz = 0;
+	}
 
 	// read input and process inputs
 	//------------------------------
 	// uint8_t oldSREG = SREG;
 	// cli();
-	uint32_t RPMPeriod = gRPMPeriod;
-	uint32_t SPEEDPeriod = gSPEEDPeriod;
-	uint32_t lastRPMDate = gLastRPMDate;
+//	uint32_t RPMPeriod = 1'000'000.0f / RPMHz;
+	uint32_t SPEEDPeriod = 1.0f;
+//	uint32_t lastRPMDate = gLastRPMDate;
 	uint32_t lastSPEEDDate = gLastSPEEDDate;
 	int8_t lastAirflowAccum = gAirFlowAccum;
 	// reset air flow accum for next loop
@@ -817,72 +728,70 @@ void evalCycle()
   
 	// Analog read : very costly when done without interrupt : 100µs per read !
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
-	gMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
+	mMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
 	// Filter MAP
-	gMeasures.MAP = mapLowPassFilter.input(gMeasures.MAP);
+	mMeasures.MAP = mMapLowPassFilter.input(mMeasures.MAP);
 
 	// Read Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
-	gMeasures.FUEL_PRESS = (analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
+//	mMeasures.FUEL_PRESS = (analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
+	mMeasures.FUEL_PRESS = (gAnalogConverter.getAnalogInput(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
 
 	// Throttle analog read. 0..100% => 0..5V
-	gMeasures.THROTTLE = analogRead(THROTTLE_IN) * (100.0f / 1023.f);
-	gMeasures.THROTTLE = throttleLowpassFilter.input(gMeasures.THROTTLE);
+	mMeasures.THROTTLE = gAnalogConverter.getAnalogInput(THROTTLE_IN) * (100.0f / 1023.f);
+	mMeasures.THROTTLE = mThrottleLowpassFilter.input(mMeasures.THROTTLE);
 	// Scale throttle value with max scale correction
-	if (gMeasures.THROTTLE > gConfig.throttleScale)
+	if (mMeasures.THROTTLE > gConfig.throttleScale)
 	{
 		// We found a greater value, update max scale
-		gConfig.throttleScale = uint8_t(round(gMeasures.THROTTLE));
+		gConfig.throttleScale = uint8_t(round(mMeasures.THROTTLE));
 		// Make sure to save it
 		gConfChanged = true;
 	}
-	gMeasures.THROTTLE = gMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f;
+	mMeasures.THROTTLE = mMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f;
 	// Get high pass filter for throttle derivative
-	gMeasures.THROTTLE_DERIV = throttleDerHighpassFilter.input(gMeasures.THROTTLE) * 1000.0f;
+	mMeasures.THROTTLE_DERIV = mThrottleDerHighpassFilter.input(mMeasures.THROTTLE) * 1000.0f;
 
-	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200.000µs
-	if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
-	{
-		// 0 stand for 0 RPM
-		RPMPeriod = 0;
-	}
-	// Detect 0 Speed : last pulse > 1km/h period : 1Kmh/0.73 = 1.36s=1.360.000µs
-	if (SPEEDPeriod > 0 and (now - lastSPEEDDate) > 1360000)
-	{
-		// 0 stand for 0 speed
-		SPEEDPeriod = 0;
-	}
+	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200'000µs
+	// if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
+	// {
+	// 	// 0 stand for 0 RPM
+	// 	RPMPeriod = 0;
+	// }
+	// Detect 0 Speed : last pulse > 1km/h period : 1Kmh/0.73 = 1.36s=1'360'000µs
+	// if (SPEEDPeriod > 0 and (now - lastSPEEDDate) > 1'360'000)
+	// {
+	// 	// 0 stand for 0 speed
+	// 	SPEEDPeriod = 0;
+	// }
 
 	// Convert µs period into Hz
 	// RPM need an additional ratio of 3 to account for the number of cylinder fired each revolution.
-	if (RPMPeriod > 0)
+	if (RPMHz > 0)
 	{
-		gMeasures.RPM = 60.0f * 1000000.0f / (RPMPeriod * 3.0f);
+		mMeasures.RPM = RPMHz * (60.0f / 3.0f);
 	}
 	else
 	{
-		gMeasures.RPM = 0.0f;
+		mMeasures.RPM = 0.0f;
 	}
-	if (SPEEDPeriod > 0)
+	if (speedHz > 0)
 	{
-		gMeasures.SPEED = 1000000.0f / (SPEEDPeriod * gConfig.speedFactor);
+		mMeasures.SPEED = speedHz * gConfig.speedFactor;
 	}
 	else
 	{
-		gMeasures.SPEED = 0.0;
+		mMeasures.SPEED = 0.0;
 	}
 
 	// Compute airflow HZ
-	uint32_t dtus = now - previousLoopDate;
-	float dts = dtus / 1000000.0f;
-	if (dts > 0.0f)
+	if (MAFHz > 0.0f)
 	{
-		float airFlowHz = lastAirflowAccum / dts; 
 		// Filter HZ value
-		gMeasures.AIR_FLOW = gAirflowLPF.input(airFlowHz);
+		mMeasures.AIR_FLOW = mAirflowLPF.input(MAFHz);
 	}
 	else
 	{
-		gMeasures.AIR_FLOW = 0.0;
+		mMeasures.AIR_FLOW = 0.0;
 	}
 
 	computeGear();
@@ -891,32 +800,32 @@ void evalCycle()
 	// We don't have MAF or VE info, so the load is a simple approximation based on MAP :
 	// 	0 bar MAP => 0% load,
 	//	2 bar MAP => 100% load (2 bar MAP means 1 bar turbo pressure)
-	gMeasures.LOAD = constrain((gMeasures.MAP * 0.5f) * 100.0f, 0.0f, 100.0f);
+	mMeasures.LOAD = constrain((mMeasures.MAP * 0.5f) * 100.0f, 0.0f, 100.0f);
 
 	// compute solenoid DC 
 	//--------------------
 	// 1st, choose the target boost in the gear table
 	float targetBoost = 0.0f;
 	{
-		float rpmIndex = (gMeasures.RPM / 1000.0f) - 1;
+		float rpmIndex = (mMeasures.RPM / 1000.0f) - 1;
 		rpmIndex = constrain(rpmIndex, 0, 6);
 		
 		targetBoost = 
-				interp(gConfig.boostTable[gMeasures.GEAR-1], rpmIndex) * 0.01f
+				interp(gConfig.boostTable[mMeasures.GEAR-1], rpmIndex) * 0.01f
 				* (gConfig.boostReference);
 	}
 
 	// Apply throttle correction
 	{
 	// throttle position correction
-		float throttleIndex = gMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
+		float throttleIndex = mMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
 		throttleIndex = constrain(throttleIndex, 0, sizeof(gConfig.throttleBoostTable)-1);
 
 		targetBoost = targetBoost * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
 
 		// Throttle pos variation correction
 		
-		float throttleDerivIndex = 3 + gMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
+		float throttleDerivIndex = 3 + mMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
 		throttleDerivIndex = constrain(throttleDerivIndex, 0, sizeof(gConfig.throttleDerivBoostTable)-1);
 
 		targetBoost = targetBoost * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
@@ -926,30 +835,30 @@ void evalCycle()
 	}
 
 	// And finally get target boost filtered
-	gMeasures.TARGET_BOOST = targetLowpassFilter.input(targetBoost);
+	mMeasures.TARGET_BOOST = mTargetLowpassFilter.input(targetBoost);
 	
 	// 2nd, apply PID filter to compute boost error
-	float error = gMeasures.TARGET_BOOST - (std::max(0.0f, gMeasures.MAP));
+	float error = mMeasures.TARGET_BOOST - (std::max(0.0f, mMeasures.MAP));
 	float P = error * gConfig.pidParam[0];
 	// Integral windup check
-	if (gMeasures.RPM > 2000 && fabs(error) < 0.4f)
+	if (mMeasures.RPM > 2000 && fabs(error) < 0.4f)
 	{
-		gErrorInteg += error * gConfig.pidParam[1] * (LOOP_PERIOD * 0.001f);
-		gErrorInteg = constrain(gErrorInteg, -0.3f, 0.3f);
+		mErrorInteg += error * gConfig.pidParam[1] * (LOOP_PERIOD * 0.001f);
+		mErrorInteg = constrain(mErrorInteg, -0.3f, 0.3f);
 	}
 	else
 	{
 		// too much error, windup integral
-		gErrorInteg = 0.0f;
+		mErrorInteg = 0.0f;
 	}
-	gErrorDeriv = ((error - gLastError) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
-	gErrorDeriv = boostHighpassFilter.input(gErrorDeriv);
-	gErrorDeriv = constrain(gErrorDeriv, -0.5f, 0.5f);
-	gLastMAP = gMeasures.MAP;
-	gLastError = error;
+	mErrorDeriv = ((error - mLastError) * gConfig.pidParam[2]) / (LOOP_PERIOD * 0.001f);
+	mErrorDeriv = mBoostHighpassFilter.input(mErrorDeriv);
+	mErrorDeriv = constrain(mErrorDeriv, -0.5f, 0.5f);
+	mLastMAP = mMeasures.MAP;
+	mLastError = error;
 	
-	gMeasures.TARGET_OUTPUT = P + gErrorInteg + gErrorDeriv;
-	gMeasures.TARGET_OUTPUT = constrain(gMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
+	mMeasures.TARGET_OUTPUT = P + mErrorInteg + mErrorDeriv;
+	mMeasures.TARGET_OUTPUT = constrain(mMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
 	
 	// Convert target output to soneloid DC
 	// We need a convertion constant to map a boost value to a solenoid DC
@@ -959,9 +868,9 @@ void evalCycle()
 //  static uint8_t  testIndex = 0;
 	if (cycleIndex == 0)
 	{
-		float relativeTarget = gMeasures.TARGET_OUTPUT;
+		float relativeTarget = mMeasures.TARGET_OUTPUT;
 		float rawIndex = constrain(relativeTarget / 1.25f * 5.0f, 0.0f, 5.0f);
-		float columnIndex = constrain(gMeasures.LOAD / 100.0f * 3.0f, 0.0f, 3.0f);
+		float columnIndex = constrain(mMeasures.LOAD / 100.0f * 3.0f, 0.0f, 3.0f);
 		
 		// interpolate DC values from table
 		uint8_t r1 = (int)floor(rawIndex);
@@ -974,7 +883,7 @@ void evalCycle()
 
 		// and finaly compute the solenoid DC! 
 		float dc = interpf(ic, rawIndex - r1);
-		gMeasures.SOL_DC = dc;
+		mMeasures.SOL_DC = dc;
 
 //  	gMeasures.SOL_DC = testIndex * 20;
 //  	testIndex += 1;
@@ -983,13 +892,13 @@ void evalCycle()
 	}
 
 	// At last, prevent the solenoid to activate if the speed if low
-	if (gMeasures.SPEED < 8.0f)
+	if (mMeasures.SPEED < 8.0f)
 	{
-		gMeasures.SOL_DC = 0.0f;
+		mMeasures.SOL_DC = 0.0f;
 	}
 
 	// Take simulation into account
-	float effectiveSolDc = gMeasures.SOL_DC;
+	float effectiveSolDc = mMeasures.SOL_DC;
 	if (gSimulation.FORCE_WG != 0)
 	{
 		effectiveSolDc = gSimulation.FORCE_WG;
@@ -1022,25 +931,25 @@ void evalCycle()
 }
 
 
-uint32_t gLastSaveCheck = 0;
+BoostController gBoostController;
 
-void loop()
+void BoostController::loop()
 {
 	// 100 eval cycles per second
 	uint32_t now = micros();
 	
-	if (now - gLastEvalCycle > LOOP_PERIOD * 1000)
+	if (now - mLastEvalCycle > LOOP_PERIOD * 1000)
 	{
 		evalCycle();
-	 	gLastEvalCycle = now;
+	 	mLastEvalCycle = now;
 		
 	 	uint32_t after = micros();
 		
 	 	// compute CPU load
-	 	gMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
+	 	mMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
 	}
 	
-	if (now - gLastSaveCheck > 1000000)
+	if (now - mLastSaveCheck > 1000000)
 	{
 	 	// every second, look for saving the conf
 	 	if (gConfChanged)
@@ -1048,6 +957,21 @@ void loop()
 	 		saveConfig();
 	 		gConfChanged = false;
 	 	}
-		gLastSaveCheck = now;
+		mLastSaveCheck = now;
 	}
+}
+
+extern "C"
+{
+
+void setup()
+{
+	gBoostController.setup();
+}
+
+void loop()
+{
+	gBoostController.loop();
+}
+
 }
