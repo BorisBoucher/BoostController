@@ -19,22 +19,22 @@
 
 struct State
 {
-  float mSpeed = 50.0f;
-  float mRpm = 0.0f;
-  float mMaf = 0.0f;
-  uint32_t mLastSpeedPulse = 0;
-  uint32_t mSpeedHalfPeriod = 0;
-  uint32_t mLastRpmPulse = 0;
-  uint32_t mRpmHalfPeriod = 0;
-  uint32_t mLastMafPulse = 0;
-  uint32_t mMafHalfPeriod = 0;
-  uint32_t mLastInputCheck = 0;
+	float mSpeed = 50.0f;
+	float mRpm = 0.0f;
+	float mMaf = 0.0f;
+	uint32_t mLastSpeedPulse = 0;
+	uint32_t mSpeedHalfPeriod = 0;
+	uint32_t mLastRpmPulse = 0;
+	uint32_t mRpmHalfPeriod = 0;
+	uint32_t mLastMafPulse = 0;
+	uint32_t mMafHalfPeriod = 0;
+	uint32_t mLastInputCheck = 0;
 
-  // Voltage booster control
-  uint16_t mInputV = 0;   // 1000th of volt
-  uint16_t mOutputV = 0;  // 1000th of volt
-  uint16_t mTargetV = 13 * 1000;  // 1000th of volt
-  uint16_t mLoopCount = 0;
+	// Voltage booster control
+	uint16_t mInputV = 0;   // 1000th of volt
+	uint16_t mOutputV = 0;  // 1000th of volt
+	uint16_t mTargetV = 13 * 1000;  // 1000th of volt
+	uint16_t mLoopCount = 0;
 } gState;
 
 const double kI = 0.1 ;
@@ -44,176 +44,186 @@ const double kD = 0.000;
 FastPID vBoostPid(kI, kP, kD, 1000);
 
 void setup() {
-  pinMode(OUT_RPM, OUTPUT);
-  pinMode(OUT_SPEED, OUTPUT);
-  pinMode(OUT_MAF, OUTPUT);
-  pinMode(IN_PLUS, INPUT_PULLUP);
-  pinMode(IN_MINUS, INPUT_PULLUP);
-  pinMode(OUT_VBOOST, OUTPUT);
+	pinMode(OUT_RPM, OUTPUT);
+	pinMode(OUT_SPEED, OUTPUT);
+	pinMode(OUT_MAF, OUTPUT);
+	pinMode(IN_PLUS, INPUT_PULLUP);
+	pinMode(IN_MINUS, INPUT_PULLUP);
+	pinMode(OUT_VBOOST, OUTPUT);
 
-  // Init serial for MUT simulation
+	// Init serial for MUT simulation
 //  Serial.begin(1953);
 
-  Serial.begin(115200);
+	Serial.begin(115200);
 
-  // Init voltage booster PID
+	// Init voltage booster PID
 //  vBoostPID.setMode(1);  // auto mode
-  vBoostPid.setOutputRange(0, 10 * 1000); // Clamp output to 10V => 5+10 ~15V
+	vBoostPid.setOutputRange(0, 10 * 1000); // Clamp output to 10V => 5+10 ~15V
 
-  // Configure PWM output for 100KHz, with a maximum of 50% duty cycle
-  // Use Timer 2 and output 3
-  TCCR2A = _BV(COM2A1) | _BV(COM2B1) | _BV(WGM21) | _BV(WGM20);
-  TCCR2B = _BV(CS20); // no div
+	// Configure PWM output for 100KHz, with a maximum of 50% duty cycle
+	// Use Timer 2 and output 3
+	TCCR2A = _BV(COM2A1) | _BV(COM2B1) | _BV(WGM21) | _BV(WGM20);
+	TCCR2B = _BV(CS20); // no div
 //  TCCR2B = _BV(CS22); // /64
-  OCR2A = 0;
-  OCR2B = 0;
+	OCR2A = 0;
+	OCR2B = 0;
 }
 
 void updateVoltageBooster(uint32_t nowUs)
 {
-  static uint32_t lastUpdateUs = 0U;
+	static uint32_t lastUpdateUs = 0U;
 
-  if (nowUs - lastUpdateUs > 1000)
-  {
-    // Read input, value in 1000th of V. Read 1024 for 5V throw a voltage divider with 3.3k and 1k resistor. 
+	if (nowUs - lastUpdateUs > 10000)
+	{
+		// Read input, value in 1000th of V. Read 1024 for 5V throw a voltage divider with 3.3k and 1k resistor. 
 //    gState.mTargetV = 5000 + round(analogRead(IN_VBOOST_REF) / 1.024 * 10.0);
-    gState.mInputV = round(analogRead(IN_VBOOST) * (1330.0f / 330.0f) / 1.024 * 5.0);
-  
-    gState.mOutputV = vBoostPid.step(gState.mTargetV, gState.mInputV);
+		gState.mInputV = round(analogRead(IN_VBOOST) * (1330.0f / 330.0f) / 1.024 * 5.0);
+	
+		gState.mOutputV = vBoostPid.step(gState.mTargetV, gState.mInputV);
 
-    // Compute PWM value
+		// Compute PWM value
 //    OCR2B = (uint32_t(gState.mInputV) * 220) / 10000;
-    OCR2B = (uint32_t(gState.mOutputV) * 200) / 10000;
+		OCR2B = (uint32_t(gState.mOutputV) * 200) / 10000;
 
-    ++gState.mLoopCount;
-    lastUpdateUs = nowUs;
-  }
+		++gState.mLoopCount;
+		lastUpdateUs = nowUs;
+	}
 }
+
+bool outSpeed = false;
+bool outRpm = false;
+bool outMaf = false;
 
 void loop() 
 {
-  uint32_t now = micros();
+	uint32_t now = micros();
 
-  updateVoltageBooster(now);
+	updateVoltageBooster(now);
 
-  if (now - gState.mLastInputCheck > 100000)
-  {
-    gState.mLastInputCheck = now;
-    // @1000Hz
-    if (not digitalRead(IN_PLUS) and gState.mSpeed < 350.0f)
-    {
-      // Increase speed
-      gState.mSpeed += 1.0f;
-    }
-    else if (not digitalRead(IN_MINUS) and gState.mSpeed > 0.0f)
-    {
-      // Increase speed
-      gState.mSpeed -= 1.0f;
-    }
+	if (now - gState.mLastInputCheck > 100000)
+	{
+		gState.mLastInputCheck = now;
+		// @1000Hz
+		if (not digitalRead(IN_PLUS) and gState.mSpeed < 350.0f)
+		{
+			// Increase speed
+			gState.mSpeed += 1.0f;
+		}
+		else if (not digitalRead(IN_MINUS) and gState.mSpeed > 0.0f)
+		{
+			// Increase speed
+			gState.mSpeed -= 1.0f;
+		}
 
-    // Compute RPM based on speed, gear shift @6000RPM
-    static const float gearRatios[] = 
-      {	
-        12.200f,
-        6.908f,
-        4.383f,
-        3.271f,
-        2.620f,
-      };
+		// Compute RPM based on speed, gear shift @6000RPM
+		static const float gearRatios[] = 
+			{	
+				12.200f,
+				6.908f,
+				4.383f,
+				3.271f,
+				2.620f,
+			};
 
-    static const float tyreCirc = 2.02f;
+		static const float tyreCirc = 2.02f;
 
-    // Gearbox outspeed (RPM)
-    float speedms = gState.mSpeed * 1000.0 / 3600.0;
-    float outHz = speedms / tyreCirc;
+		// Gearbox outspeed (RPM)
+		float speedms = gState.mSpeed * 1000.0 / 3600.0;
+		float outHz = speedms / tyreCirc;
 
-    int gear;
-    float engineHz = 0.0;
-    float engineRpm = 0.0f;
-    for (gear = 0; gear < 5; ++gear)
-    {
-      // Compute engine RPM @ gear
-      engineHz = outHz * gearRatios[gear];
-      engineRpm = engineHz * 60;
-      if (engineRpm < 6000)
-      {
-        // We found a valid gear
-        break;
-      }
-    }
+		int gear;
+		float engineHz = 0.0;
+		float engineRpm = 0.0f;
+		for (gear = 0; gear < 5; ++gear)
+		{
+			// Compute engine RPM @ gear
+			engineHz = outHz * gearRatios[gear];
+			engineRpm = engineHz * 60;
+			if (engineRpm < 6000)
+			{
+				// We found a valid gear
+				break;
+			}
+		}
 
-    // store engine rpm
-    gState.mRpm = engineRpm;
+		// store engine rpm
+		gState.mRpm = engineRpm;
 
-    // Compute estimate of MAF Hz 
-    // 2800Hz @ 6000rpm
-    gState.mMaf = engineRpm * 0.46f;
+		// Compute estimate of MAF Hz 
+		// 2800Hz @ 6000rpm
+		gState.mMaf = engineRpm * 0.46f;
 
-    // Compute speed, engine and maf pulse period
-    float speedHz = gState.mSpeed * 0.73f;
-    float speedHalfPeriod = 1.0f / speedHz / 2.0f;
-    float engineHalfPeriod = 1.0f / (engineHz * 3.0f) / 2.0f;
-    float mafHalfPeriod = 1.0f / gState.mMaf / 2.0f;
+		// Compute speed, engine and maf pulse period
+		float speedHz = gState.mSpeed * 0.73f;
+		float speedHalfPeriod =  1.0f / speedHz / 2.0f;
+		float engineHalfPeriod = 1.0f / (engineHz * 3.0f) / 2.0f;
+		float mafHalfPeriod =    1.0f / gState.mMaf / 2.0f;
 
-    gState.mSpeedHalfPeriod = uint32_t(speedHalfPeriod * 1000000.0f);
-    gState.mRpmHalfPeriod = uint32_t(engineHalfPeriod * 1000000.0f);
-    gState.mMafHalfPeriod = uint32_t(mafHalfPeriod * 1000000.0f);
-  }
+		gState.mSpeedHalfPeriod = uint32_t(speedHalfPeriod  * 1000000.0f);
+		gState.mRpmHalfPeriod =   uint32_t(engineHalfPeriod * 1000000.0f);
+		gState.mMafHalfPeriod =   uint32_t(mafHalfPeriod    * 1000000.0f);
+	}
 
-  static bool outSpeed = false;
-  static bool outRpm = false;
-  static bool outMaf = false;
+	// Manage speed and rpm pulses
+	if (gState.mSpeedHalfPeriod > 0 and now - gState.mLastSpeedPulse > gState.mSpeedHalfPeriod)
+	{
+		outSpeed = not outSpeed;
+		digitalWrite(OUT_SPEED, outSpeed);
+		gState.mLastSpeedPulse += gState.mSpeedHalfPeriod;
+	}
+	if (gState.mRpmHalfPeriod > 0 and now - gState.mLastRpmPulse > gState.mRpmHalfPeriod)
+	{
+		outRpm = not outRpm;
+		digitalWrite(OUT_RPM, outRpm);
+		gState.mLastRpmPulse += gState.mRpmHalfPeriod;
+	}
+	if (gState.mMafHalfPeriod > 0 and now - gState.mLastMafPulse > gState.mMafHalfPeriod)
+	{
+		outMaf = not outMaf;
+		digitalWrite(OUT_MAF, outMaf ? 1 : 0);
+		
+		// Overflow check
+		if (now - gState.mLastMafPulse > 2 * gState.mMafHalfPeriod)
+		{
+			// overflow!
+			gState.mLastMafPulse = now;
+		}
+		else
+		{
+			gState.mLastMafPulse += gState.mMafHalfPeriod;
+		}
+	}
 
-  // Manage speed and rpm pulses
-  if (gState.mSpeedHalfPeriod > 0 and now - gState.mLastSpeedPulse > gState.mSpeedHalfPeriod)
-  {
-    outSpeed = not outSpeed;
-    digitalWrite(OUT_SPEED, outSpeed);
-    gState.mLastSpeedPulse += gState.mSpeedHalfPeriod;
-  }
-  if (gState.mRpmHalfPeriod > 0 and now - gState.mLastRpmPulse > gState.mRpmHalfPeriod)
-  {
-    outRpm = not outRpm;
-    digitalWrite(OUT_RPM, outRpm);
-    gState.mLastRpmPulse += gState.mRpmHalfPeriod;
-  }
-  if (gState.mMafHalfPeriod > 0 and now - gState.mLastMafPulse > gState.mMafHalfPeriod)
-  {
-    outMaf = not outMaf;
-    digitalWrite(OUT_MAF, outMaf);
-    gState.mLastMafPulse += gState.mMafHalfPeriod;
-  }
+	// Serial display
+	static uint32_t lastDisplay = 0;
+	if (now - lastDisplay > 100000)
+	{
+		// Serial.print("VTGT = ");
+		// Serial.println(gState.mTargetV / 1000.0);
+		// Serial.print("VIN  = ");
+		// Serial.println(gState.mInputV / 1000.0);
+		// Serial.write("VOUT = ");
+		// Serial.println(gState.mOutputV / 1000.0);
+		// Serial.write("PWM = ");
+		// Serial.println(OCR2B);
+		// Serial.print("Loop/s = ");
+		// Serial.println(gState.mLoopCount);
+		// Serial.print("Speed = ");
+		// Serial.println(gState.mSpeed);
+		// Serial.print("Freq = ");
+		// Serial.print(gState.mSpeedHalfPeriod);
+		// Serial.print(", ");
+		// Serial.println(gState.mRpmHalfPeriod);
+		gState.mLoopCount = 0;
+		lastDisplay = now;
+	}
 
-  // Serial display
-  static uint32_t lastDisplay = 0;
-  if (now - lastDisplay > 100000)
-  {
-    // Serial.print("VTGT = ");
-    // Serial.println(gState.mTargetV / 1000.0);
-    // Serial.print("VIN  = ");
-    // Serial.println(gState.mInputV / 1000.0);
-    // Serial.write("VOUT = ");
-    // Serial.println(gState.mOutputV / 1000.0);
-    // Serial.write("PWM = ");
-    // Serial.println(OCR2B);
-    // Serial.print("Loop/s = ");
-    // Serial.println(gState.mLoopCount);
-    // Serial.print("Speed = ");
-    // Serial.println(gState.mSpeed);
-    // Serial.print("Freq = ");
-    // Serial.print(gState.mSpeedHalfPeriod);
-    // Serial.print(", ");
-    // Serial.println(gState.mRpmHalfPeriod);
-    gState.mLoopCount = 0;
-    lastDisplay = now;
-  }
+	// MUT responder
+	if (Serial.available() > 0)
+	{
+		int command = Serial.read();
 
-  // MUT responder
-  if (Serial.available() > 0)
-  {
-    int command = Serial.read();
-
-    Serial.write(command);
-    Serial.write(random(0,256));
-  }
+		Serial.write(command);
+		Serial.write(random(0,256));
+	}
 }
