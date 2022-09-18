@@ -101,15 +101,16 @@ float waterTempConv(float input);
 // 	}
 // };
 
-constexpr const float FULL_SCALE_ADC = 1023.0f;
+constexpr const float FULL_SCALE_ADC = 4096.0f;
 
 const auto aci = std::to_array<AnalogConvItem>( 
 {
+	// Channel			Factor					Offset  conversion function
 	{MAP_IN, 		     3.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 3 Bar full scale
-	{FUEL_PRESS_IN,     14.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
-	{OIL_PRES_IN, 	   150.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
+	{FUEL_PRESS_IN,     14.0f / FULL_SCALE_ADC, 14.0f / 5.0f * 0.5f, unityConv},		// 14 Bar full scale
+	{OIL_PRES_IN, 	    14.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
 	// Convert to 0..5V then to temperature curve
-	{WATER_TEMP_IN,	     5.0f / FULL_SCALE_ADC, 0.0f, waterTempConv},		// 14 Bar full scale
+	{WATER_TEMP_IN,	     5.0f / FULL_SCALE_ADC, 0.0f, waterTempConv},	// 5V @ 150°Bar full scale
 	{OIL_TEMP_IN,      150.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
 	{THROTTLE_IN,      100.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 100% full scale
 	{AFR_IN,             1.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// TBD
@@ -121,14 +122,16 @@ class AnalogConverter
 {
 	ADC_HandleTypeDef* mHadc;
 
-	// Double buffer table for DMA conversion
-	uint16_t mAdcOutputTable[NB_ADC_CONV] = {};
+	// Analog converted and scaled ouput
+	double mAdcOutputTable[NB_ADC_CONV] = {};
 
 	// Current buffer
 //	int mCurrentBuffer = 0;
 
 	// Buffer ready indicator
 	volatile bool mBufferReady = false;
+
+	volatile bool mDEBUG_EVENT = false;
 
 public:
 
@@ -141,7 +144,7 @@ public:
 	// called from interrupt context
 	void onConvertionComplete();
 
-	uint16_t getAnalogInput(AnalogInput inputId);
+	float getAnalogInput(AnalogInput inputId);
 };
 
 extern AnalogConverter gAnalogConverter;

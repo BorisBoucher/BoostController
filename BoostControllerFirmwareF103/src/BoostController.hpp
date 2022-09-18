@@ -9,7 +9,6 @@
 
 uint32_t micros();
 
-
 // Measurement and computation table
 struct Measurement
 {
@@ -51,8 +50,8 @@ class BoostController
 	FilterOnePole mBoostHighpassFilter =       {micros, HIGHPASS, 0.1f}; 
 	FilterOnePole mTargetLowpassFilter =       {micros, LOWPASS,  5.0f};
 	FilterOnePole mThrottleLowpassFilter =     {micros, LOWPASS,  5.0f};
-	FilterOnePole mThrottleDerHighpassFilter = {micros, HIGHPASS, 2.0f};
-	// Low pss filter for Air flow data. Should correct the measure aliasing
+	FilterOnePole mThrottleDerHighpassFilter = {micros, HIGHPASS, 1.0f};
+	// Low pass filter for Air flow data. Should correct the measure aliasing
 	// of counting MAG HZ in short period of 10ms (which may lead to very quantified result
 	// at low HZ).
 //	FilterOnePole mAirflowLPF =                {micros, LOWPASS,  5.0f}; 

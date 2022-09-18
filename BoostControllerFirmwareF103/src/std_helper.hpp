@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 
+#define sizeof_array(arr) (sizeof(arr) / sizeof(arr[0]))
+
 // Not available in C++17, std::to_array
 namespace std
 {

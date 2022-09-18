@@ -6,12 +6,15 @@
 #include <functional>
 #include <FloatDefine.h>
 #include <RunningStatistics.h>
+//#include <parameters/include/ParameterDef.hpp>
+#include <ParameterDef.hpp>
 #include "std_helper.hpp"
 #include "config.hpp"
 #include "core/Inc/main.h"
 #include "BoostController.hpp"
 #include "InputCapture.hpp"
 #include "AnalogInput.hpp"
+#include "Interp.hpp"
 
 //#include <EEPROM.h>
 
@@ -437,28 +440,13 @@ enum DigitalOut
 
 void digitalWrite(DigitalOut output, bool state)
 {
-	// TODO
+	switch (output)
+	{
+	case SOLENOID_OUT:
+		HAL_GPIO_WritePin(WG_PWM_GPIO_Port, WG_PWM_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+		break;
+	}
 }
-
-// template <typename T, typename U, typename V>
-// T constrain(const T value, const U min, const V max)
-// {
-// 	T ret;
-// 	if (value < min)
-// 	{
-// 		ret = min;
-// 	}
-// 	else if (value > max)
-// 	{
-// 		ret = max;
-// 	}
-// 	else
-// 	{
-// 		ret = value;
-// 	}
-
-// 	return ret;
-// }
 
 struct VersionInfo
 {
@@ -467,17 +455,20 @@ struct VersionInfo
 	bool operator==(const VersionInfo &other) const
 	{
 		bool ok = true;
-		for (size_t i = 0; i < sizeof(mVersionString) && ok; ++i)
+		for (size_t i = 0; i < sizeof(mVersionString) and ok; ++i)
 		{
-			ok &= mVersionString[i] == other.mVersionString[i];
+			ok = ok and (mVersionString[i] == other.mVersionString[i]);
 		}
 		return ok;
 	}
+
 	bool operator!=(const VersionInfo &other) const
 	{
-		return !(*this == other);
+		return not (*this == other);
 	}
 };
+
+extern ParamIndex gParamIndex;
 
 void saveConfig()
 {
@@ -490,6 +481,64 @@ void saveConfig()
 
 void loadConfig()
 {
+	// Fill default value from config
+	
+	// Boost table
+	{
+		const auto desc = gParamIndex.getParamDef(ParamID::BC_BOOST_TABLE);
+		for (auto gear = 0; gear < desc->mArrayDesc->mArrayRow; ++gear)
+		{
+			for (auto rpmCol = 0; rpmCol < desc->mArrayDesc->mArrayCol; ++rpmCol)
+			{
+				gParamIndex.setParam(
+					ParamID::BC_BOOST_TABLE + rpmCol + gear * desc->mArrayDesc->mArrayCol, 
+					gConfig.boostTable[gear][rpmCol],
+					true);
+			}
+		}
+	}
+
+	// Throttle boost correction
+	{
+		const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_COR);
+		for (auto tps = 0; tps < desc->mArrayDesc->mArrayRow; ++tps)
+		{
+			gParamIndex.setParam(
+				ParamID::BC_TTL_COR + tps, 
+				gConfig.throttleBoostTable[tps],
+				true);
+		}
+	}
+
+	// Throttle move boost correction
+	{
+		const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_DER_COR);
+		for (auto tpsDer = 0; tpsDer < desc->mArrayDesc->mArrayRow; ++tpsDer)
+		{
+			gParamIndex.setParam(
+				ParamID::BC_TTL_DER_COR + tpsDer, 
+				gConfig.throttleDerivBoostTable[tpsDer],
+				true);
+		}
+	}
+
+	// Duty cycle table
+	{
+		const auto desc = gParamIndex.getParamDef(ParamID::BC_DC_TABLE);
+		for (auto presRow = 0; presRow < desc->mArrayDesc->mArrayRow; ++presRow)
+		{
+			for (auto loadCol = 0; loadCol < desc->mArrayDesc->mArrayCol; ++loadCol)
+			{
+				gParamIndex.setParam(
+					ParamID::BC_DC_TABLE + loadCol + presRow * desc->mArrayDesc->mArrayCol, 
+					gConfig.dutyCycleTable[presRow][loadCol],
+					true);
+			}
+		}
+	}
+
+
+
 	// VersionInfo refVi;
 	// refVi.mVersionString[8] = CONFIG_VER;
 	// VersionInfo vi;
@@ -531,7 +580,7 @@ void BoostController::setup()
 {
 	gAnalogConverter.setup();
 
-	// Init serial port @57600 baud, 8N1
+	// Init serial port @115200 baud, 8N1
 	// Serial.begin( 57600);
 
 	// Serial.write("init\n");
@@ -589,34 +638,36 @@ void BoostController::computeGear()
 	}
 	
 	mMeasures.GEAR = gear;
+	gParamIndex.setParam(ParamID::GEAR, mMeasures.GEAR, false);
 }
 
-float interp(uint8_t *table, float indexf)
-{
-	int index1 = (int)floor(indexf);
-	int index2 = (int)ceil(indexf);
-	float alpha = indexf - index1;
-	float delta = float(table[index2]) - float(table[index1]);
-	return table[index1] + delta * alpha;
-}
-
-float interpf(float *table, float indexf)
-{
-	int index1 = (int)floor(indexf);
-	int index2 = (int)ceil(indexf);
-	float alpha = indexf - index1;
-	float delta = table[index2] - table[index1];
-	return table[index1] + delta * alpha;
-}
-
-//float pistonPos = 0.0f;
-//float spool = 0.0f;
-
-// struct SensorCorrectionLUT
+// float interpParam(uint16_t baseParamId, float indexf)
 // {
-// 	float mRawValue;
-// 	float mOutputValue;
-// };
+// 	int index1 = (int)floor(indexf);
+// 	int index2 = (int)ceil(indexf);
+// 	float alpha = indexf - index1;
+
+// 	float v1 = gParamIndex.getParam<float>(baseParamId+index1).second;
+// 	float v2 = gParamIndex.getParam<float>(baseParamId+index2).second;
+// 	float delta = v2 - v1;
+// 	float ret = v1 + delta * alpha;
+
+// 	return ret;
+// }
+
+
+template<typename T, typename U, typename V>
+void clamp(T& value, const U min, const V max)
+{
+	if (value < min)
+	{
+		value = min;
+	}
+	else if (value > max)
+	{
+		value = max;
+	}
+}
 
 
 // 0..5V to Water temp (°C)
@@ -629,8 +680,6 @@ SensorCorrectionLUT waterTempLUT[] =
 	{  4.0f, 100.0f},
 	{  5.0f, 150.0f},
 };
-
-#define sizeof_array(arr) (sizeof(arr) / sizeof(arr[0]))
 
 float RPMHz = 0.0;
 float speedHz = 0.0;
@@ -728,16 +777,17 @@ void BoostController::evalCycle()
   
 	// Analog read : very costly when done without interrupt : 100µs per read !
 	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
-	mMeasures.MAP = analogRead(MAP_IN) * (5.0f / 1023.f);
+	mMeasures.MAP =  gAnalogConverter.getAnalogInput(MAP_IN);
 	// Filter MAP
 	mMeasures.MAP = mMapLowPassFilter.input(mMeasures.MAP);
+	gParamIndex.setParam(ParamID::MAP, mMeasures.MAP, false);
 
 	// Read Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
-//	mMeasures.FUEL_PRESS = (analogRead(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
-	mMeasures.FUEL_PRESS = (gAnalogConverter.getAnalogInput(FUEL_PRESS_IN) * (5.0f / 1023.f) - 0.5f) * 2.58f;
+	mMeasures.FUEL_PRESS = gAnalogConverter.getAnalogInput(FUEL_PRESS_IN);
+	gParamIndex.setParam(ParamID::FUEL_PRES, mMeasures.FUEL_PRESS, false);
 
 	// Throttle analog read. 0..100% => 0..5V
-	mMeasures.THROTTLE = gAnalogConverter.getAnalogInput(THROTTLE_IN) * (100.0f / 1023.f);
+	mMeasures.THROTTLE = gAnalogConverter.getAnalogInput(THROTTLE_IN);
 	mMeasures.THROTTLE = mThrottleLowpassFilter.input(mMeasures.THROTTLE);
 	// Scale throttle value with max scale correction
 	if (mMeasures.THROTTLE > gConfig.throttleScale)
@@ -748,8 +798,10 @@ void BoostController::evalCycle()
 		gConfChanged = true;
 	}
 	mMeasures.THROTTLE = mMeasures.THROTTLE / float(gConfig.throttleScale) * 100.0f;
+	gParamIndex.setParam(ParamID::THROTTLE, mMeasures.THROTTLE, false);
 	// Get high pass filter for throttle derivative
-	mMeasures.THROTTLE_DERIV = mThrottleDerHighpassFilter.input(mMeasures.THROTTLE) * 1000.0f;
+	mMeasures.THROTTLE_DERIV = mThrottleDerHighpassFilter.input(mMeasures.THROTTLE)/* * 1000.0f*/;
+	gParamIndex.setParam(ParamID::TTL_POS_DER, mMeasures.THROTTLE_DERIV, false);
 
 	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200'000µs
 	// if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
@@ -769,6 +821,7 @@ void BoostController::evalCycle()
 	if (RPMHz > 0)
 	{
 		mMeasures.RPM = RPMHz * (60.0f / 3.0f);
+		gParamIndex.setParam(ParamID::RPM, mMeasures.RPM, false);
 	}
 	else
 	{
@@ -776,7 +829,8 @@ void BoostController::evalCycle()
 	}
 	if (speedHz > 0)
 	{
-		mMeasures.SPEED = speedHz * gConfig.speedFactor;
+		mMeasures.SPEED = speedHz * 2 * gConfig.speedFactor;
+		gParamIndex.setParam(ParamID::SPEED, mMeasures.SPEED, false);
 	}
 	else
 	{
@@ -788,6 +842,7 @@ void BoostController::evalCycle()
 	{
 		// Filter HZ value
 		mMeasures.AIR_FLOW = mAirflowLPF.input(MAFHz);
+		gParamIndex.setParam(ParamID::AIR_FLOW, mMeasures.AIR_FLOW, false);
 	}
 	else
 	{
@@ -801,42 +856,30 @@ void BoostController::evalCycle()
 	// 	0 bar MAP => 0% load,
 	//	2 bar MAP => 100% load (2 bar MAP means 1 bar turbo pressure)
 	mMeasures.LOAD = constrain((mMeasures.MAP * 0.5f) * 100.0f, 0.0f, 100.0f);
+	gParamIndex.setParam(ParamID::LOAD, mMeasures.LOAD, false);
 
 	// compute solenoid DC 
 	//--------------------
+	float targetBoost = gConfig.boostReference;
 	// 1st, choose the target boost in the gear table
-	float targetBoost = 0.0f;
-	{
-		float rpmIndex = (mMeasures.RPM / 1000.0f) - 1;
-		rpmIndex = constrain(rpmIndex, 0, 6);
-		
-		targetBoost = 
-				interp(gConfig.boostTable[mMeasures.GEAR-1], rpmIndex) * 0.01f
-				* (gConfig.boostReference);
-	}
+	//------------------------------------------------
+	targetBoost *= interp2D(gParamIndex, ParamID::BC_BOOST_TABLE, mMeasures.GEAR, mMeasures.RPM) * 0.01f;
 
 	// Apply throttle correction
-	{
+	// -------------------------
 	// throttle position correction
-		float throttleIndex = mMeasures.THROTTLE * (sizeof(gConfig.throttleBoostTable)-1) * 0.01f;
-		throttleIndex = constrain(throttleIndex, 0, sizeof(gConfig.throttleBoostTable)-1);
+	targetBoost = targetBoost * interp1D(gParamIndex, ParamID::BC_TTL_COR, mMeasures.THROTTLE) * 0.01f;
 
-		targetBoost = targetBoost * interp(gConfig.throttleBoostTable, throttleIndex) * 0.01f;
+	// Throttle pos variation correction
+	targetBoost = targetBoost * interp1D(gParamIndex, ParamID::BC_TTL_DER_COR, mMeasures.THROTTLE_DERIV) * 0.01f;
 
-		// Throttle pos variation correction
-		
-		float throttleDerivIndex = 3 + mMeasures.THROTTLE_DERIV * (sizeof(gConfig.throttleDerivBoostTable)-1) * 0.001f;
-		throttleDerivIndex = constrain(throttleDerivIndex, 0, sizeof(gConfig.throttleDerivBoostTable)-1);
-
-		targetBoost = targetBoost * interp(gConfig.throttleDerivBoostTable, throttleDerivIndex) * 0.01f;
-
-		// Convert boost value into MAP value, just add the atmo pressure ;)
-		targetBoost += 1.0f;
-	}
+	// Convert boost value into MAP value, just add the atmo pressure ;)
+	targetBoost += 1.0f;
 
 	// And finally get target boost filtered
 	mMeasures.TARGET_BOOST = mTargetLowpassFilter.input(targetBoost);
-	
+	gParamIndex.setParam(ParamID::BC_TGT_BOOST, mMeasures.TARGET_BOOST, false);
+
 	// 2nd, apply PID filter to compute boost error
 	float error = mMeasures.TARGET_BOOST - (std::max(0.0f, mMeasures.MAP));
 	float P = error * gConfig.pidParam[0];
@@ -859,43 +902,23 @@ void BoostController::evalCycle()
 	
 	mMeasures.TARGET_OUTPUT = P + mErrorInteg + mErrorDeriv;
 	mMeasures.TARGET_OUTPUT = constrain(mMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
+	gParamIndex.setParam(ParamID::BC_TGT_OUTPUT, mMeasures.TARGET_OUTPUT, false);
 	
-	// Convert target output to soneloid DC
-	// We need a convertion constant to map a boost value to a solenoid DC
-	// target output is in absolut pressure, convert if to relative pressure.
+	// Convert target output to solenoid DC
+	// We need a conversion constant to map a boost value to a solenoid DC
+	// target output is in absolute pressure, convert it to relative pressure.
 	// DC is updated only once per sol cycle
-	static uint8_t  cycleIndex = 0;
-//  static uint8_t  testIndex = 0;
-	if (cycleIndex == 0)
-	{
-		float relativeTarget = mMeasures.TARGET_OUTPUT;
-		float rawIndex = constrain(relativeTarget / 1.25f * 5.0f, 0.0f, 5.0f);
-		float columnIndex = constrain(mMeasures.LOAD / 100.0f * 3.0f, 0.0f, 3.0f);
-		
-		// interpolate DC values from table
-		uint8_t r1 = (int)floor(rawIndex);
-//    	uint8_t r2 = constrain(r1 + 1, 0, 5);
-//		uint8_t c1 = (int)floor(columnIndex);
-
-		float ic[2];
-		ic[0] = interp(gConfig.dutyCycleTable[r1], columnIndex);
-		ic[1] = interp(gConfig.dutyCycleTable[r1+1], columnIndex);
-
-		// and finaly compute the solenoid DC! 
-		float dc = interpf(ic, rawIndex - r1);
-		mMeasures.SOL_DC = dc;
-
-//  	gMeasures.SOL_DC = testIndex * 20;
-//  	testIndex += 1;
-//  	if (testIndex > 5)
-//    		testIndex = 0;
-	}
+	float relativeTarget = mMeasures.TARGET_OUTPUT; // - 1.0f;
+	float dc = interp2D(gParamIndex, ParamID::BC_DC_TABLE, relativeTarget, mMeasures.LOAD);
+	mMeasures.SOL_DC = dc;
 
 	// At last, prevent the solenoid to activate if the speed if low
 	if (mMeasures.SPEED < 8.0f)
 	{
 		mMeasures.SOL_DC = 0.0f;
 	}
+
+	gParamIndex.setParam(ParamID::BC_SOL_DC, mMeasures.SOL_DC, false);
 
 	// Take simulation into account
 	float effectiveSolDc = mMeasures.SOL_DC;
@@ -906,32 +929,303 @@ void BoostController::evalCycle()
   
 	// produce output value
 	// --------------------
-	// This first version use a simple software approch to implement the PWM: 
-	// Based on a 20Hz cycle, the PWD is managed by the main loop running @100Hz.
-	// This leaves 5 loops per cycle, leading to 6 PWM levels :
-	//  0, 20, 40, 60, 80, 100%
-	if ((effectiveSolDc + 40) / 20.0f > cycleIndex+2)
-	{
-		// switch solenoid on
-		digitalWrite(SOLENOID_OUT, true);
-	}
-	else
-	{
-		// switch selonoid off
-		digitalWrite(SOLENOID_OUT, false);
-	}
-
-	cycleIndex++;
-	if (cycleIndex >= 5)
-	{
-		cycleIndex = 0;
-	}
+	TIM1->CCR1 = std::min(uint32_t(65534), 65535 - uint32_t(65534 * effectiveSolDc / 100 ));
 
 	previousLoopDate = now;
 }
 
-
 BoostController gBoostController;
+
+class SerialMgr : public ParamIndex::CommInterface
+{
+	UART_HandleTypeDef*	mHUart;
+
+	// 16 byte buffer (2^4)
+	static const constexpr size_t BUFFER_POWER = 4;
+	static const constexpr size_t BUFFER_SIZE = 1 << BUFFER_POWER;
+	static const constexpr size_t BUFFER_SIZE_MASK = BUFFER_SIZE-1;
+	// 16 bytes input ring buffer
+	uint8_t mInputBuffer[BUFFER_SIZE];
+	// Input ring buffer head (AKA read cursor)
+	uint8_t mInputHead = 0;
+	// Input ring buffer tail (AKA write cursor)
+	uint8_t mInputTail = 0;
+	// Number of bytes awaited for the current receiving message.
+	uint8_t mExpectInput = MINIMUM_MSG_SIZE;
+
+	// header + checksum
+	static const constexpr size_t MINIMUM_MSG_SIZE = 4;
+
+	enum InputState : uint8_t
+	{
+		WAIT_HEADER,
+		WAIT_DATA
+	};
+
+	enum Command : uint8_t
+	{
+		DATA_RQ = 0b00,
+		DATA_TX = 0b01,
+
+		INVALID_HEADER = 0xff
+	};
+
+	enum AsciiCodes : uint8_t
+	{
+		SOT = 0x02
+	};
+
+	struct Header
+	{
+		Command  mCommand;
+		uint16_t mId;
+		uint8_t  mSize;
+	};
+
+	InputState mInputState = WAIT_HEADER;
+
+	Header readHeader()
+	{
+		Header header;
+		// parse the header
+		if (mInputBuffer[mInputHead] != SOT)
+		{
+			header.mCommand = INVALID_HEADER;
+		}
+		else
+		{
+			uint8_t ctrl = mInputBuffer[(mInputHead + 1) & BUFFER_SIZE_MASK];
+			uint8_t idLow = mInputBuffer[(mInputHead + 2) & BUFFER_SIZE_MASK];
+
+			header.mCommand = static_cast<Command>((ctrl >> 3) & 0b11);
+			header.mSize = 1 + ((ctrl >> 5) & 0b111);
+			header.mId = ((uint16_t(ctrl) & 0x111) << 8) + idLow;
+		}
+
+		return header;
+	}
+
+	void purgeInputBuffer()
+	{
+		// Remove at least one byte if possible
+		if (mInputHead != mInputTail)
+		{
+			mInputHead = (mInputHead + 1) & BUFFER_SIZE_MASK;
+		}
+		// Then purge the rest, but stop on SOT
+		while (mInputHead != mInputTail 
+			and mInputBuffer[mInputHead] != SOT)
+		{
+			mInputHead = (mInputHead + 1) & BUFFER_SIZE_MASK;
+		}
+
+		// Once purged, we restart with a header
+		mExpectInput = MINIMUM_MSG_SIZE;
+	}
+
+	bool verifyChecksum()
+	{
+		auto idx = mInputHead;
+		uint8_t sum = 0;
+
+		while (idx != mInputTail)
+		{
+			sum += mInputBuffer[idx];
+			idx = (idx + 1) & BUFFER_SIZE_MASK;
+		};
+
+		// sum, including checksum byte shall be zero
+		return sum == 0;
+	}
+
+	// Request the communication provider to send a data transmission.
+	void commSendCb(uint16_t paramId, volatile const char* data, uint8_t size) override final
+	{
+		uint8_t sendBuffer[MINIMUM_MSG_SIZE + 8];
+
+		// init checksum
+		uint8_t& sum = sendBuffer[3 + size];
+		sum = 0;
+
+		// Encode header:
+		// Start Of Text
+		sendBuffer[0] = SOT;
+		sum += sendBuffer[0];
+		// Command
+		sendBuffer[1] = (DATA_TX & 0b11) << 3;
+		// Data size
+		sendBuffer[1] |= ((size-1) & 0b111) << 5;
+		// Param ID higher bits
+		sendBuffer[1] |= (paramId >> 8) & 0b111;
+		sum += sendBuffer[1];
+		// Param ID lower bits
+		sendBuffer[2] = paramId & 0xff;
+		sum += sendBuffer[2];
+		// data bytes
+		for (size_t i=0; i<size; ++i)
+		{
+			sendBuffer[3+i] = data[i];
+			sum += sendBuffer[3+i];
+		}
+		sum = 256 - sum;
+
+		HAL_UART_Transmit(mHUart, sendBuffer, size + 4, 10);
+	}
+
+	// Request the communication provider to send a data request.
+	void commSendRqCb(uint16_t paramId, uint8_t size) override final
+	{
+		uint8_t sendBuffer[MINIMUM_MSG_SIZE + 8];
+
+		// init checksum
+		uint8_t& sum = sendBuffer[3];
+		sum = 0;
+
+		// Encode header:
+		// Start Of Text
+		sendBuffer[0] = SOT;
+		sum += sendBuffer[0];
+		// Command
+		sendBuffer[1] = (DATA_RQ & 0b11) << 3;
+		// Data size
+		sendBuffer[1] |= ((size-1) & 0b111) << 5;
+		// Param ID higher bits
+		sendBuffer[1] |= (paramId >> 8) & 0b111;
+		sum += sendBuffer[1];
+		// Param ID lower bits
+		sendBuffer[2] = paramId & 0xff;
+		sum += sendBuffer[2];
+
+		// finalize checksum
+		sum = 256 - sum;
+
+		// And transmit data over serial line
+		HAL_UART_Transmit(mHUart, sendBuffer, 4, 10);
+	}
+
+public:
+	SerialMgr(UART_HandleTypeDef* hUart)
+	:	mHUart(hUart)
+	{
+	
+	}
+
+	void loop()
+	{
+		if (HAL_UART_Receive(mHUart, mInputBuffer + mInputTail, 1, 0) == HAL_OK)
+		{
+			// advance write cursor
+			mInputTail = (mInputTail + 1) & BUFFER_SIZE_MASK;
+
+			// Do we have the awaited data ?
+			if (((mInputTail - mInputHead) & BUFFER_SIZE_MASK) == mExpectInput)
+			{
+				Header header = readHeader();
+				// process input
+				if (mInputState == WAIT_HEADER)
+				{
+					if (header.mCommand == DATA_RQ)
+					{
+						if (verifyChecksum())
+						{
+							// we can process the command
+						}
+					}
+					else if (header.mCommand == DATA_TX)
+					{
+						// We need to wait for more bytes
+						mExpectInput = MINIMUM_MSG_SIZE + header.mSize;
+						mInputState = WAIT_DATA;
+					}
+					else
+					{
+						purgeInputBuffer();
+					}
+				}
+				else
+				{
+
+				}
+			}
+		}
+	}
+
+	// void sendParam(ParamID paramId, float value)
+	// {
+	// 	// retrieve param desc
+	// 	auto paramDef = gParamIndex.getParamDef(paramId);
+
+	// 	char* buffer="xxx\n";
+	// 	HAL_UART_Transmit(mHUart, (uint8_t*)buffer, 4, 10);
+	// }
+};
+
+SerialMgr gSerialMgr(&huart1);
+
+ParamIndex gParamIndex(DeviceID::BOOST_CTRL, &gSerialMgr, nullptr);
+
+// Automatic parameter broadcast
+struct ParamBroadcast
+{
+	// The parameter to broadcast
+	ParamID	mParamId;
+	// Broadcast period (ms)
+	uint32_t mPeriod;
+};
+
+const constexpr ParamBroadcast gParamBroadcastTable[] =
+{
+	// ID					period(ms)
+	{ParamID::MAP,			    1},
+	{ParamID::THROTTLE,		   10},
+	{ParamID::BC_SOL_DC,	   10},
+	{ParamID::GEAR,			  100},
+	{ParamID::LOAD,			   10},
+	{ParamID::BC_CPU_LOAD,	   10},
+	{ParamID::BC_TGT_BOOST,	   10},
+	{ParamID::BC_TGT_OUTPUT,   10},
+	{ParamID::OIL_PRES,		   10},
+	{ParamID::FUEL_PRES,	   10},
+	{ParamID::LAMBDA,		  100},
+	{ParamID::RPM,			   10},
+	{ParamID::SPEED,		   10},
+	{ParamID::TTL_POS_DER,	  100},
+	{ParamID::AIR_FLOW,		   10},
+	{ParamID::WATER_TEMP,	 1000},
+	{ParamID::OIL_TEMP,		 1000},
+};
+
+class Broadcaster
+{
+	ParamIndex&	mParamIndex;
+
+	uint32_t	mLastTx[sizeof_array(gParamBroadcastTable)] = {0};
+public:
+	Broadcaster(ParamIndex& paramIndex)
+	:	mParamIndex(paramIndex)
+	{}
+
+	void loop()
+	{
+		uint32_t now = HAL_GetTick();
+
+		for (size_t i = 0; i < sizeof_array(gParamBroadcastTable); ++i)
+		{
+			const ParamBroadcast& paramBroadcast = gParamBroadcastTable[i];
+			if (now - mLastTx[i] > paramBroadcast.mPeriod)
+			{
+				// It's time to transmit this param!
+
+				mParamIndex.triggerTransmission(paramBroadcast.mParamId);
+
+				// keep track of last TX
+				mLastTx[i] = now;
+			}
+		}
+	}
+};
+
+Broadcaster gBroadcaster(gParamIndex);
 
 void BoostController::loop()
 {
@@ -941,22 +1235,29 @@ void BoostController::loop()
 	if (now - mLastEvalCycle > LOOP_PERIOD * 1000)
 	{
 		evalCycle();
-	 	mLastEvalCycle = now;
+		mLastEvalCycle = now;
 		
-	 	uint32_t after = micros();
+		uint32_t after = micros();
 		
-	 	// compute CPU load
-	 	mMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
+		// compute CPU load
+		mMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
+		gParamIndex.setParam(ParamID::BC_CPU_LOAD, mMeasures.CHIP_LOAD, false);
 	}
+
+	// manage serial port
+	gSerialMgr.loop();
+
+	// Manage parameter broadcast
+	gBroadcaster.loop();
 	
 	if (now - mLastSaveCheck > 1000000)
 	{
-	 	// every second, look for saving the conf
-	 	if (gConfChanged)
-	 	{
-	 		saveConfig();
-	 		gConfChanged = false;
-	 	}
+		// every second, look for saving the conf
+		if (gConfChanged)
+		{
+			saveConfig();
+			gConfChanged = false;
+		}
 		mLastSaveCheck = now;
 	}
 }

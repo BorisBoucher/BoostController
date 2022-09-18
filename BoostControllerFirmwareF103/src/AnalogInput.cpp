@@ -49,16 +49,6 @@ float waterTempConv(float input)
 	return correctSensorValue(input, gWaterTempLUT, sizeof_array(gWaterTempLUT));
 };
 
-// const auto aci = std::to_array<AnalogConvItem>( 
-// {
-// 	{MAP_IN, 		     3.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 3 Bar full scale
-// 	{FUEL_PRESS_IN,     14.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
-// 	{OIL_TEMP_IN, 	   150.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
-// 	// Convert to 0..5V then to temperature curve
-// 	{WATER_TEMP_IN,	     5.0f / FULL_SCALE_ADC, 0.0f, waterTempConv},		// 14 Bar full scale
-// });
-
-// constexpr const size_t NB_ADC_CONV = std::tuple_size<decltype(aci)>::value;
 
 AnalogConverter::AnalogConverter(ADC_HandleTypeDef* hadc)
 :	mHadc(hadc)
@@ -73,8 +63,7 @@ void AnalogConverter::setup()
 	HAL_ADCEx_Calibration_Start(mHadc);
 
 	// Start 1st conversion
-	HAL_ADC_Start_DMA(
-		mHadc, (uint32_t*)(gAdcOutputTable), NB_ADC_CONV);
+	HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
 }
 
 void AnalogConverter::loop()
@@ -88,13 +77,13 @@ void AnalogConverter::loop()
 	// Apply conversion factors
 	for (unsigned int i=0; i<NB_ADC_CONV; ++i)
 	{
-		mAdcOutputTable[i] = gAdcOutputTable[i];
+		mAdcOutputTable[i] = gAdcOutputTable[i] * aci[i].mConvFactor - aci[i].mConvOffset;
+//		mAdcOutputTable[i] = gAdcOutputTable[i];
 	}
 
 	// Start next conversion and wait
 	mBufferReady = false;
-	HAL_ADC_Start_DMA(
-		mHadc, (uint32_t*)(gAdcOutputTable), NB_ADC_CONV);
+	HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
 }
 
 // called from interrupt context
@@ -104,9 +93,13 @@ void AnalogConverter::onConvertionComplete()
 	{
 		mBufferReady = true;
 	}
+	else
+	{
+		mDEBUG_EVENT = true;
+	}
 }
 
-uint16_t AnalogConverter::getAnalogInput(AnalogInput inputId)
+float AnalogConverter::getAnalogInput(AnalogInput inputId)
 {
 	return mAdcOutputTable[inputId];
 }

@@ -31,8 +31,10 @@ struct Config0
   */
 	float pidParam[3] = 
 	{
-		0.8f,
-		2.7f,
+//		0.8f,
+		3.8f,
+//		2.7f,
+		5.0f,
 		0.2f
 	};
 	
@@ -81,7 +83,7 @@ struct Config1 : public Config0
 {
 	// Max scaling of throttle sensor to report 100% throttle position.
 	// This allow to compensate for small adjustment of throttle (e.g. sensor reporting 95% @WOT)
-	uint8_t	throttleScale = 100;
+	uint8_t	throttleScale = 80;
 };
 
 struct Config : public Config1

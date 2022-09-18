@@ -8,3 +8,6 @@ __pycache__
 target
 Gerber
 *.FCStd1
+BoostControllerFirmwareF103/src/BoostControllerFirmwareF103.gpdsc
+*-bak
+Electrical/STM32F103/BoostControllerBluePill/BoostController-backups/
