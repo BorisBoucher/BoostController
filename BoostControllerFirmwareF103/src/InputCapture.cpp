@@ -19,6 +19,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		{
 			// no signal for too long
 			captureValue = 0;
+			ici.mLastCapture = 0;
+			ici.mWaitFirstCapture = true;
 		}
 	};
 
@@ -40,7 +42,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 		// manage OF if capture value is in first quarter
 		if (capture < 0x4000 and (htim->Instance->SR & TIM_FLAG_UPDATE) == TIM_FLAG_UPDATE)
 		{
-			// update interrupt pending, we need to add 1 to the loop counter
+			// loop update interrupt pending, we need to add 1 loop to the counter
 			newCounter += 0x10000;
 		}
 		if (ici.mWaitFirstCapture)

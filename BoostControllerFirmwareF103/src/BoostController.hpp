@@ -37,14 +37,18 @@ struct Measurement
 	float	LOAD = 0.0f;
 	// Boost controller chip load (%)
 	float	CHIP_LOAD = 0.0f;
+	// Oil pressure
+	float	OIL_PRESS = 0.0f;
+	// Oil temperature
+	float	OIL_TEMP = 0.0f;
 };
 
 
-class BoostController
+class BoostController : public ParamIndex::ChangeCallbackInterface
 {
 	// Other constants
 	// loop period in ms
-	static const constexpr uint32_t LOOP_PERIOD = 10;	
+	static const constexpr uint32_t LOOP_PERIOD = 100;
 
 	FilterOnePole mMapLowPassFilter =          {micros, LOWPASS,  5.0f};
 	FilterOnePole mBoostHighpassFilter =       {micros, HIGHPASS, 0.1f}; 
@@ -69,10 +73,16 @@ class BoostController
 	uint32_t mLastEvalCycle = 0;
 	uint32_t mLastSaveCheck = 0;
 
+	// Fuel pump priming on startup.
+	bool mPrimingFuel = true;
 
 	void computeGear();
+	void manageFuelPrime();
 
 	void evalCycle();
+
+	// A parameter has changed (new value received from comm provider).
+	void onParamChange(uint16_t paramId) override final;
 
 public:
 	void setup();

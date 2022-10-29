@@ -9,7 +9,7 @@
 struct Config0
 {
 	// Type circumference in meter
-	float	tyreCircum = 2.02f;
+	float	tireCircum = 2.02f;
 	// conversion factor from speed sensor Hz to km/h
 	float	speedFactor = 0.73f;
 	float	gearRatios[6] = 

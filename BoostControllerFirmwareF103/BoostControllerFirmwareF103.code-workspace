@@ -7,7 +7,12 @@
 			"path": "..\\..\\3000GT\\Common"
 		}
 	],
-	"settings": {},
+	"settings": {
+		"files.associations": {
+			"atomic": "cpp",
+			"xxatomic": "cpp"
+		}
+	},
 	"launch": {
 		"version": "0.2.0",
 		"configurations": []

@@ -19,32 +19,12 @@ enum AnalogInput
 {
 	MAP_IN,
 	FUEL_PRESS_IN,
-	OIL_TEMP_IN,
+	OIL_PRESS_IN,
 	WATER_TEMP_IN,
-	OIL_PRES_IN,
+	OIL_TEMP_IN,
 	THROTTLE_IN,
 	AFR_IN
 };
-
-// template <typename T, typename U, typename V>
-// T constrain(const T value, const U min, const V max)
-// {
-// 	T ret;
-// 	if (value < min)
-// 	{
-// 		ret = min;
-// 	}
-// 	else if (value > max)
-// 	{
-// 		ret = max;
-// 	}
-// 	else
-// 	{
-// 		ret = value;
-// 	}
-
-// 	return ret;
-// }
 
 struct SensorCorrectionLUT
 {
@@ -101,17 +81,19 @@ float waterTempConv(float input);
 // 	}
 // };
 
-constexpr const float FULL_SCALE_ADC = 4096.0f;
+//constexpr const float FULL_SCALE_ADC = 4096.0f;
+// Compensate for voltage divisor ratio
+constexpr const float FULL_SCALE_ADC = 3600.0f;
 
 const auto aci = std::to_array<AnalogConvItem>( 
 {
 	// Channel			Factor					Offset  conversion function
 	{MAP_IN, 		     3.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 3 Bar full scale
 	{FUEL_PRESS_IN,     14.0f / FULL_SCALE_ADC, 14.0f / 5.0f * 0.5f, unityConv},		// 14 Bar full scale
-	{OIL_PRES_IN, 	    14.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
+	{OIL_PRESS_IN, 	    14.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
 	// Convert to 0..5V then to temperature curve
-	{WATER_TEMP_IN,	     5.0f / FULL_SCALE_ADC, 0.0f, waterTempConv},	// 5V @ 150°Bar full scale
-	{OIL_TEMP_IN,      150.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 14 Bar full scale
+	{WATER_TEMP_IN,	     5.0f / FULL_SCALE_ADC, 0.0f, waterTempConv},	// 5V @ 150°C
+	{OIL_TEMP_IN,      (180.0f-20.0f) / FULL_SCALE_ADC, 20.0f, unityConv},		// 0V@20°C, 5V @ 180°C
 	{THROTTLE_IN,      100.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// 100% full scale
 	{AFR_IN,             1.0f / FULL_SCALE_ADC, 0.0f, unityConv},		// TBD
 });
@@ -125,6 +107,9 @@ class AnalogConverter
 	// Analog converted and scaled ouput
 	double mAdcOutputTable[NB_ADC_CONV] = {};
 
+	// Lost DMA interrupt tracker
+	uint32_t mLastConvStart = 0;
+
 	// Current buffer
 //	int mCurrentBuffer = 0;
 
@@ -132,6 +117,11 @@ class AnalogConverter
 	volatile bool mBufferReady = false;
 
 	volatile bool mDEBUG_EVENT = false;
+
+	volatile HAL_StatusTypeDef mDEBUG_last_start_DMA_ret = HAL_OK;
+	volatile bool mDEBUG_DMA_started = false;
+	volatile bool mConvertiongDone = false;
+	volatile uint32_t mIterruptCounter = 0;
 
 public:
 

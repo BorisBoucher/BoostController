@@ -1,13 +1,17 @@
 //#include <avr/io.h> // Standard include for AVR
 #include <atomic>
-#include <stdint.h>
-#include <stddef.h>
 #include <cmath>
 #include <functional>
+#include <stdint.h>
+#include <stddef.h>
+#include <vector>
+
 #include <FloatDefine.h>
 #include <RunningStatistics.h>
 //#include <parameters/include/ParameterDef.hpp>
 #include <ParameterDef.hpp>
+#include <FlashStore.hpp>
+
 #include "std_helper.hpp"
 #include "config.hpp"
 #include "core/Inc/main.h"
@@ -15,6 +19,7 @@
 #include "InputCapture.hpp"
 #include "AnalogInput.hpp"
 #include "Interp.hpp"
+#include <CANCommProvider.hpp>
 
 //#include <EEPROM.h>
 
@@ -298,7 +303,7 @@
 		Serial TX		:	PIN 1, Port PD1
 		Serial RX		:	PIN 0, Port PD0
 	
-  Frequency mesurement
+  Frequency measurement
   --------------------
 	Frequency is measured by the pin change interrupt that measure the time between each
 	rising edge for RPM and SPEED.
@@ -410,7 +415,7 @@ uint32_t micros()
 	} while (tickBefore < tickAfter);
 
 	// Compute micro by combining ms integration and elapsed systick counter.
-	uint32_t micro = ms * 1000 + (72000 - tickAfter) / 72000;
+	uint32_t micro = ms * 1000 + (72000 - tickAfter) / (72000 / 1000);
 
 	return micro;
 }
@@ -445,6 +450,9 @@ void digitalWrite(DigitalOut output, bool state)
 	case SOLENOID_OUT:
 		HAL_GPIO_WritePin(WG_PWM_GPIO_Port, WG_PWM_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
 		break;
+	case FUEL_PUMP_OUT:
+		HAL_GPIO_WritePin(FUEL_P_GPIO_Port, FUEL_P_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+		break;
 	}
 }
 
@@ -470,19 +478,49 @@ struct VersionInfo
 
 extern ParamIndex gParamIndex;
 
-void saveConfig()
+FlashStore<> gFlashStore;
+
+template <typename T>
+void processParamStorage(uint16_t paramId, T& confItem, bool store)
 {
-	// VersionInfo vi;
-	// vi.mVersionString[8] = CONFIG_VER;
-	// EEPROM.put(0, vi);
-	
-	// EEPROM.put(16, gConfig);
+	if (store)
+	{
+		auto bv = gParamIndex.getParam<T>(static_cast<ParamID>(paramId));
+		if (bv.first)
+		{
+			confItem = bv.second;
+		}
+	}
+	else
+	{
+		gParamIndex.setParam(paramId, confItem, true);
+	}
 }
 
-void loadConfig()
+void processConfigStorage(bool store)
 {
-	// Fill default value from config
+	// single items
+	{
+		processParamStorage(ParamID::TIRE_CIRC, gConfig.tireCircum, store);
+		processParamStorage(ParamID::SPEED_RATIO,  gConfig.speedFactor, store);
+	}
+
+	// gear ratio
+	{
+		const auto desc = gParamIndex.getParamDef(ParamID::GEAR_RATIO);
+		for (auto gear = 0; gear < desc->mArrayDesc->mArrayRow; ++gear)
+		{
+			processParamStorage(ParamID::GEAR_RATIO + gear, gConfig.gearRatios[gear], store);
+		}
+	}
 	
+	// PID params
+	{
+		processParamStorage(ParamID::BC_SERVO_P, gConfig.pidParam[0], store);
+		processParamStorage(ParamID::BC_SERVO_I, gConfig.pidParam[1], store);
+		processParamStorage(ParamID::BC_SERVO_D, gConfig.pidParam[2], store);
+	}
+
 	// Boost table
 	{
 		const auto desc = gParamIndex.getParamDef(ParamID::BC_BOOST_TABLE);
@@ -490,10 +528,10 @@ void loadConfig()
 		{
 			for (auto rpmCol = 0; rpmCol < desc->mArrayDesc->mArrayCol; ++rpmCol)
 			{
-				gParamIndex.setParam(
+				processParamStorage(
 					ParamID::BC_BOOST_TABLE + rpmCol + gear * desc->mArrayDesc->mArrayCol, 
 					gConfig.boostTable[gear][rpmCol],
-					true);
+					store);
 			}
 		}
 	}
@@ -503,10 +541,7 @@ void loadConfig()
 		const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_COR);
 		for (auto tps = 0; tps < desc->mArrayDesc->mArrayRow; ++tps)
 		{
-			gParamIndex.setParam(
-				ParamID::BC_TTL_COR + tps, 
-				gConfig.throttleBoostTable[tps],
-				true);
+			processParamStorage(ParamID::BC_TTL_COR + tps, gConfig.throttleBoostTable[tps], store);
 		}
 	}
 
@@ -515,11 +550,16 @@ void loadConfig()
 		const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_DER_COR);
 		for (auto tpsDer = 0; tpsDer < desc->mArrayDesc->mArrayRow; ++tpsDer)
 		{
-			gParamIndex.setParam(
+			processParamStorage(
 				ParamID::BC_TTL_DER_COR + tpsDer, 
 				gConfig.throttleDerivBoostTable[tpsDer],
-				true);
+				store);
 		}
+	}
+
+	// reference boost
+	{
+		processParamStorage(ParamID::BC_REF_BOOST, gConfig.boostReference, store);
 	}
 
 	// Duty cycle table
@@ -529,51 +569,152 @@ void loadConfig()
 		{
 			for (auto loadCol = 0; loadCol < desc->mArrayDesc->mArrayCol; ++loadCol)
 			{
-				gParamIndex.setParam(
+				processParamStorage(
 					ParamID::BC_DC_TABLE + loadCol + presRow * desc->mArrayDesc->mArrayCol, 
 					gConfig.dutyCycleTable[presRow][loadCol],
-					true);
+					store);
 			}
 		}
 	}
 
+	// Fuel pump prime
+	{
+		processParamStorage(ParamID::BC_FUEL_PRIME, gConfig.fuelPumpPrime, store);
+	}
+}
 
+void saveConfig()
+{
+	// copy param value into conf
+	processConfigStorage(true);
 
-	// VersionInfo refVi;
-	// refVi.mVersionString[8] = CONFIG_VER;
-	// VersionInfo vi;
-	// EEPROM.get(0, vi);
+	// And save it to flash
+	gFlashStore.store(makeChunkLabel("BCTL"), &gConfig, sizeof(gConfig));
+}
 
-	// Serial.write("Version info loaded : ");
-	// Serial.write(vi.mVersionString);
-	// Serial.print(int(vi.mVersionString[8]));
-	// Serial.write("\n");
+void loadConfig()
+{
+	// try to load the config object from flash
+	Config conf;
+	if (gFlashStore.load(makeChunkLabel("BCTL"), &conf, sizeof(conf)))
+	{
+		gConfig = conf;
+	}
+	else
+	{
+		// try with older configuration version...
+	}
 
-	// Serial.write("Loading conf\n");
-	// if (vi.mVersionString[8] == 0)
+	// Fill value from config into params
+	processConfigStorage(false);
+
+	// // single items
 	// {
-	// 	EEPROM.get(16, static_cast<Config0&>(gConfig));
-	// 	// Need to write the conf back
-	// 	gConfChanged = true;
+	// 	gParamIndex.setParam(
+	// 		ParamID::TIRE_CIRC, 
+	// 		gConfig.tireCircum,
+	// 		true);
+
+	// 	gParamIndex.setParam(
+	// 		ParamID::SPEED_RATIO, 
+	// 		gConfig.speedFactor,
+	// 		true);
 	// }
-	// else if (vi.mVersionString[8] == 1)
+
+	// // gear ratio
 	// {
-	// 	EEPROM.get(16, static_cast<Config1&>(gConfig));
-	// 	// Need to write the conf back
-	// 	gConfChanged = true;
+	// 	const auto desc = gParamIndex.getParamDef(ParamID::GEAR_RATIO);
+	// 	for (auto gear = 0; gear < desc->mArrayDesc->mArrayRow; ++gear)
+	// 	{
+	// 		gParamIndex.setParam(
+	// 			ParamID::GEAR_RATIO + gear, 
+	// 			gConfig.gearRatios[gear],
+	// 			true);
+	// 	}
 	// }
-	// else if (vi.mVersionString[8] == CONFIG_VER)
- 	// {
-	// 	// Load last version of config, no convertion required
-	// 	EEPROM.get(16, gConfig);
-	// }
-	// else
+	
+	// // PID params
 	// {
-	// 	// no data, or need conversion
-	// 	Serial.write("Unknwon conf version found, ignoring\n");
-	// 	return;
+	// 	gParamIndex.setParam(
+	// 		ParamID::BC_SERVO_P, 
+	// 		gConfig.pidParam[0],
+	// 		true);
+	// 	gParamIndex.setParam(
+	// 		ParamID::BC_SERVO_I, 
+	// 		gConfig.pidParam[1],
+	// 		true);
+	// 	gParamIndex.setParam(
+	// 		ParamID::BC_SERVO_D, 
+	// 		gConfig.pidParam[2],
+	// 		true);
 	// }
-	// Serial.write("Conf loaded\n");
+
+	// // Boost table
+	// {
+	// 	const auto desc = gParamIndex.getParamDef(ParamID::BC_BOOST_TABLE);
+	// 	for (auto gear = 0; gear < desc->mArrayDesc->mArrayRow; ++gear)
+	// 	{
+	// 		for (auto rpmCol = 0; rpmCol < desc->mArrayDesc->mArrayCol; ++rpmCol)
+	// 		{
+	// 			gParamIndex.setParam(
+	// 				ParamID::BC_BOOST_TABLE + rpmCol + gear * desc->mArrayDesc->mArrayCol, 
+	// 				gConfig.boostTable[gear][rpmCol],
+	// 				true);
+	// 		}
+	// 	}
+	// }
+
+	// // Throttle boost correction
+	// {
+	// 	const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_COR);
+	// 	for (auto tps = 0; tps < desc->mArrayDesc->mArrayRow; ++tps)
+	// 	{
+	// 		gParamIndex.setParam(
+	// 			ParamID::BC_TTL_COR + tps, 
+	// 			gConfig.throttleBoostTable[tps],
+	// 			true);
+	// 	}
+	// }
+
+	// // Throttle move boost correction
+	// {
+	// 	const auto desc = gParamIndex.getParamDef(ParamID::BC_TTL_DER_COR);
+	// 	for (auto tpsDer = 0; tpsDer < desc->mArrayDesc->mArrayRow; ++tpsDer)
+	// 	{
+	// 		gParamIndex.setParam(
+	// 			ParamID::BC_TTL_DER_COR + tpsDer, 
+	// 			gConfig.throttleDerivBoostTable[tpsDer],
+	// 			true);
+	// 	}
+	// }
+
+	// // reference boost
+	// {
+	// 	gParamIndex.setParam(
+	// 		ParamID::BC_REF_BOOST, 
+	// 		gConfig.boostReference,
+	// 		true);
+	// }
+
+	// // Duty cycle table
+	// {
+	// 	const auto desc = gParamIndex.getParamDef(ParamID::BC_DC_TABLE);
+	// 	for (auto presRow = 0; presRow < desc->mArrayDesc->mArrayRow; ++presRow)
+	// 	{
+	// 		for (auto loadCol = 0; loadCol < desc->mArrayDesc->mArrayCol; ++loadCol)
+	// 		{
+	// 			gParamIndex.setParam(
+	// 				ParamID::BC_DC_TABLE + loadCol + presRow * desc->mArrayDesc->mArrayCol, 
+	// 				gConfig.dutyCycleTable[presRow][loadCol],
+	// 				true);
+	// 		}
+	// 	}
+	// }
+
+	// // Fuel pump prime
+	// {
+	// 	gParamIndex.setParam(ParamID::BC_FUEL_PRIME, gConfig.fuelPumpPrime, true);
+	// }
 }
 
 void BoostController::setup()
@@ -623,7 +764,7 @@ void BoostController::computeGear()
 	float speedMs = (mMeasures.SPEED / 3600.0f) * 1000.0f;
 	float revPerMeter = engineHz / speedMs;
 	float gearRatio = revPerMeter
-						* gConfig.tyreCircum;
+						* gConfig.tireCircum;
 	
 	int gear = 1;
 	float bestDelta = fabs(gConfig.gearRatios[0] - gearRatio);
@@ -641,20 +782,26 @@ void BoostController::computeGear()
 	gParamIndex.setParam(ParamID::GEAR, mMeasures.GEAR, false);
 }
 
-// float interpParam(uint16_t baseParamId, float indexf)
-// {
-// 	int index1 = (int)floor(indexf);
-// 	int index2 = (int)ceil(indexf);
-// 	float alpha = indexf - index1;
+void BoostController::manageFuelPrime()
+{
+	if (not mPrimingFuel)
+		return;
 
-// 	float v1 = gParamIndex.getParam<float>(baseParamId+index1).second;
-// 	float v2 = gParamIndex.getParam<float>(baseParamId+index2).second;
-// 	float delta = v2 - v1;
-// 	float ret = v1 + delta * alpha;
+	auto now = HAL_GetTick();
 
-// 	return ret;
-// }
-
+	// NB: output is a low ide switch with a boost transistor that invert the logic of the 
+	// output.
+	if (now / 1000 < gConfig.fuelPumpPrime)
+	{
+		digitalWrite(FUEL_PUMP_OUT, false);
+	}
+	else
+	{
+		// prime finished
+		digitalWrite(FUEL_PUMP_OUT, true);
+		mPrimingFuel = false;
+	}
+}
 
 template<typename T, typename U, typename V>
 void clamp(T& value, const U min, const V max)
@@ -687,7 +834,7 @@ float MAFHz = 0.0;
 
 void BoostController::evalCycle()
 {
-	static uint32_t previousLoopDate = 0;
+//	static uint32_t previousLoopDate = 0;
 
 	gAnalogConverter.loop();
 
@@ -730,14 +877,17 @@ void BoostController::evalCycle()
 	// float MAFHz = 0.0;
 
 	// capture read
-	InputCapture inputCapture;
 	__disable_irq();
-	inputCapture = gInputCapture.mValues;
+	InputCapture inputCapture = gInputCapture.mValues;
 	__enable_irq();
 
 	if (inputCapture.mRPM != 0)
 	{
 		RPMHz = 1 / (inputCapture.mRPM * IC_TICK_DUR);
+		if (RPMHz < 0)
+		{
+			RPMHz = 0;
+		}
 	}
 	else
 	{
@@ -774,23 +924,31 @@ void BoostController::evalCycle()
 	// SREG = oldSREG;
 
 	uint32_t now = micros();
-  
-	// Analog read : very costly when done without interrupt : 100µs per read !
-	// Read MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
-	mMeasures.MAP =  gAnalogConverter.getAnalogInput(MAP_IN);
+
+	// Retrieve analog reads
+	// MAP. 1V per bar, 0V @ 0bar, 1V@1 bar (atmospheric pressure)...
+	mMeasures.MAP = gAnalogConverter.getAnalogInput(MAP_IN);
 	// Filter MAP
 	mMeasures.MAP = mMapLowPassFilter.input(mMeasures.MAP);
 	gParamIndex.setParam(ParamID::MAP, mMeasures.MAP, false);
 
-	// Read Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
+	// Fuel pressure, relative. 2.58Bar per V, 0.5V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
 	mMeasures.FUEL_PRESS = gAnalogConverter.getAnalogInput(FUEL_PRESS_IN);
 	gParamIndex.setParam(ParamID::FUEL_PRES, mMeasures.FUEL_PRESS, false);
+
+	// Oil pressure, relative. 2.58Bar per V, 0.0V..4.5V => 0..150PSI (10.38Bar), 0.5V @ 0bar
+	mMeasures.OIL_PRESS = gAnalogConverter.getAnalogInput(OIL_PRESS_IN);
+	gParamIndex.setParam(ParamID::OIL_PRES, mMeasures.OIL_PRESS, false);
+
+	// Oil temperature.
+	mMeasures.OIL_TEMP = gAnalogConverter.getAnalogInput(OIL_TEMP_IN);
+	gParamIndex.setParam(ParamID::OIL_TEMP, mMeasures.OIL_TEMP, false);
 
 	// Throttle analog read. 0..100% => 0..5V
 	mMeasures.THROTTLE = gAnalogConverter.getAnalogInput(THROTTLE_IN);
 	mMeasures.THROTTLE = mThrottleLowpassFilter.input(mMeasures.THROTTLE);
 	// Scale throttle value with max scale correction
-	if (mMeasures.THROTTLE > gConfig.throttleScale)
+	if (uint8_t(mMeasures.THROTTLE) > gConfig.throttleScale)
 	{
 		// We found a greater value, update max scale
 		gConfig.throttleScale = uint8_t(round(mMeasures.THROTTLE));
@@ -802,6 +960,9 @@ void BoostController::evalCycle()
 	// Get high pass filter for throttle derivative
 	mMeasures.THROTTLE_DERIV = mThrottleDerHighpassFilter.input(mMeasures.THROTTLE)/* * 1000.0f*/;
 	gParamIndex.setParam(ParamID::TTL_POS_DER, mMeasures.THROTTLE_DERIV, false);
+
+//! 4ms
+//return;
 
 	// Detect 0 RPM : last pulse > 100RPM period : 100RPM=>1.6666Hz, *3=>5Hz, 1/5Hz=0.2s=>200'000µs
 	// if (RPMPeriod > 0 and (now - lastRPMDate) > 200000)
@@ -821,36 +982,40 @@ void BoostController::evalCycle()
 	if (RPMHz > 0)
 	{
 		mMeasures.RPM = RPMHz * (60.0f / 3.0f);
-		gParamIndex.setParam(ParamID::RPM, mMeasures.RPM, false);
 	}
 	else
 	{
 		mMeasures.RPM = 0.0f;
 	}
+	gParamIndex.setParam(ParamID::RPM, mMeasures.RPM, false);
 	if (speedHz > 0)
 	{
 		mMeasures.SPEED = speedHz * 2 * gConfig.speedFactor;
-		gParamIndex.setParam(ParamID::SPEED, mMeasures.SPEED, false);
 	}
 	else
 	{
 		mMeasures.SPEED = 0.0;
 	}
+	gParamIndex.setParam(ParamID::SPEED, mMeasures.SPEED, false);
 
 	// Compute airflow HZ
 	if (MAFHz > 0.0f)
 	{
 		// Filter HZ value
 		mMeasures.AIR_FLOW = mAirflowLPF.input(MAFHz);
-		gParamIndex.setParam(ParamID::AIR_FLOW, mMeasures.AIR_FLOW, false);
 	}
 	else
 	{
 		mMeasures.AIR_FLOW = 0.0;
 	}
+	gParamIndex.setParam(ParamID::AIR_FLOW, mMeasures.AIR_FLOW, false);
 
+//! 5.9ms
 	computeGear();
-	
+	manageFuelPrime();
+// !6ms
+
+
 	// Compute engine load
 	// We don't have MAF or VE info, so the load is a simple approximation based on MAP :
 	// 	0 bar MAP => 0% load,
@@ -858,12 +1023,17 @@ void BoostController::evalCycle()
 	mMeasures.LOAD = constrain((mMeasures.MAP * 0.5f) * 100.0f, 0.0f, 100.0f);
 	gParamIndex.setParam(ParamID::LOAD, mMeasures.LOAD, false);
 
+//! 7ms
+
 	// compute solenoid DC 
 	//--------------------
 	float targetBoost = gConfig.boostReference;
 	// 1st, choose the target boost in the gear table
 	//------------------------------------------------
 	targetBoost *= interp2D(gParamIndex, ParamID::BC_BOOST_TABLE, mMeasures.GEAR, mMeasures.RPM) * 0.01f;
+
+//! 7%
+
 
 	// Apply throttle correction
 	// -------------------------
@@ -904,6 +1074,8 @@ void BoostController::evalCycle()
 	mMeasures.TARGET_OUTPUT = constrain(mMeasures.TARGET_OUTPUT, 0.0f, 2.0f);
 	gParamIndex.setParam(ParamID::BC_TGT_OUTPUT, mMeasures.TARGET_OUTPUT, false);
 	
+//! 10ms
+
 	// Convert target output to solenoid DC
 	// We need a conversion constant to map a boost value to a solenoid DC
 	// target output is in absolute pressure, convert it to relative pressure.
@@ -931,13 +1103,15 @@ void BoostController::evalCycle()
 	// --------------------
 	TIM1->CCR1 = std::min(uint32_t(65534), 65535 - uint32_t(65534 * effectiveSolDc / 100 ));
 
-	previousLoopDate = now;
+//	previousLoopDate = now;
 }
 
 BoostController gBoostController;
 
-class SerialMgr : public ParamIndex::CommInterface
+class SerialMgr : public CommInterface
 {
+	CommProviderCallback* mCommCallback = nullptr;
+
 	UART_HandleTypeDef*	mHUart;
 
 	// 16 byte buffer (2^4)
@@ -1039,7 +1213,7 @@ class SerialMgr : public ParamIndex::CommInterface
 	}
 
 	// Request the communication provider to send a data transmission.
-	void commSendCb(uint16_t paramId, volatile const char* data, uint8_t size) override final
+	void commSendCb(uint16_t paramId, const uint8_t* data, uint8_t size) override final
 	{
 		uint8_t sendBuffer[MINIMUM_MSG_SIZE + 8];
 
@@ -1129,6 +1303,7 @@ public:
 						if (verifyChecksum())
 						{
 							// we can process the command
+							mCommCallback->requestFromComm(this, header.mId, header.mSize);
 						}
 					}
 					else if (header.mCommand == DATA_TX)
@@ -1142,27 +1317,108 @@ public:
 						purgeInputBuffer();
 					}
 				}
-				else
+				else if (mInputState == WAIT_DATA)
 				{
-
+					if (header.mCommand == DATA_TX)
+					{
+						if (verifyChecksum())
+						{
+							// we can process the command
+							mCommCallback->setFromComm(this, header.mId, mInputBuffer + 3, header.mSize);
+						}
+					}
 				}
 			}
 		}
 	}
-
-	// void sendParam(ParamID paramId, float value)
-	// {
-	// 	// retrieve param desc
-	// 	auto paramDef = gParamIndex.getParamDef(paramId);
-
-	// 	char* buffer="xxx\n";
-	// 	HAL_UART_Transmit(mHUart, (uint8_t*)buffer, 4, 10);
-	// }
 };
 
 SerialMgr gSerialMgr(&huart1);
 
-ParamIndex gParamIndex(DeviceID::BOOST_CTRL, &gSerialMgr, nullptr);
+/// Dual comm serial.CAN handler.
+/// Bridge the CAN bus, the serial line and local node in all direction:
+/// - CAN => serial and local
+/// - Serial => CAN and local
+/// - Local => CAN and serial
+class MultiCommProvider : public CommInterface, public CommProviderCallback
+{
+
+	CommProviderCallback* mCommCallback = nullptr;
+
+	std::vector<CommInterface*> mCommInterfaces;
+
+	// Request the communication provider to send a data transmission.
+	void commSendCb(uint16_t paramId, const uint8_t* data, uint8_t size) override final
+	{
+		for (const auto& comm : mCommInterfaces)
+		{
+			comm->commSendCb(paramId, data, size);
+		}
+	}
+
+	// Request the communication provider to send a data request.
+	void commSendRqCb(uint16_t paramId, uint8_t size) override final
+	{
+		for (const auto& comm : mCommInterfaces)
+		{
+			comm->commSendRqCb(paramId, size);
+		}
+	}
+
+	void setFromComm(CommInterface* sender, uint16_t paramId, const uint8_t* data, uint8_t size) override final
+	{
+		// send to local node
+		mCommCallback->setFromComm(sender, paramId, data, size);
+
+		// send to other comm provider. But how do we know which ?
+		for (auto& commProv : mCommInterfaces)
+		{
+			if (sender != commProv)
+			{
+				commProv->commSendCb(paramId, data, size);
+			}
+		}
+	}
+
+	void requestFromComm(CommInterface* sender, uint16_t paramId, uint8_t size) override final
+	{
+		// send to local node
+		mCommCallback->requestFromComm(sender, paramId, size);
+
+		// send to other comm provider. But how do we know which ?
+		for (auto& commProv : mCommInterfaces)
+		{
+			if (sender != commProv)
+			{
+				commProv->commSendRqCb(paramId, size);
+			}
+		}
+	}
+
+public:
+
+	MultiCommProvider()
+	:	mCommCallback()
+	{
+		mCommInterfaces.reserve(2);
+	}
+
+	void setCommCallback(CommProviderCallback* commCallback)
+	{
+		mCommCallback = commCallback;
+	}
+
+	void addCommInterface(CommInterface* comm)
+	{
+		mCommInterfaces.push_back(comm);
+	}
+};
+
+MultiCommProvider gMultiComm;
+
+ParamIndex gParamIndex(DeviceID::BOOST_CTRL, &gMultiComm, &gBoostController);
+
+CANCommProvider gCanCommProvider(&hcan, &gParamIndex);
 
 // Automatic parameter broadcast
 struct ParamBroadcast
@@ -1227,6 +1483,18 @@ public:
 
 Broadcaster gBroadcaster(gParamIndex);
 
+void BoostController::onParamChange(uint16_t paramId)
+{
+	auto desc = gParamIndex.getParamDef(paramId);
+	if (	desc != nullptr
+		and desc->mIsConf
+		and desc->mDeviceID == DeviceID::BOOST_CTRL)
+	{
+		// Need to save the conf
+		gConfChanged = true;
+	}
+}
+
 void BoostController::loop()
 {
 	// 100 eval cycles per second
@@ -1247,8 +1515,11 @@ void BoostController::loop()
 	// manage serial port
 	gSerialMgr.loop();
 
+	// manage CAN interface
+	gCanCommProvider.loop();
+
 	// Manage parameter broadcast
-	gBroadcaster.loop();
+//	gBroadcaster.loop();
 	
 	if (now - mLastSaveCheck > 1000000)
 	{
@@ -1268,11 +1539,58 @@ extern "C"
 void setup()
 {
 	gBoostController.setup();
+
+	gMultiComm.setCommCallback(&gParamIndex);
+	gMultiComm.addCommInterface(&gCanCommProvider);
+	gMultiComm.addCommInterface(&gSerialMgr);
+
+	HAL_CAN_Start(&hcan);
+	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_RX_FIFO1_MSG_PENDING);
+
+	CAN_FilterTypeDef filter;
+	filter.FilterActivation = ENABLE;
+	filter.FilterBank = 0;
+	filter.FilterMode = CAN_FILTERMODE_IDMASK;
+	filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	filter.FilterScale = CAN_FILTERSCALE_16BIT;
+	filter.FilterIdHigh = 0;
+	filter.FilterIdLow = 0;
+	filter.FilterMaskIdHigh = 0;
+	filter.FilterMaskIdLow = 0;
+	HAL_CAN_ConfigFilter(&hcan, &filter);
 }
 
 void loop()
 {
+	
+	HAL_CAN_ActivateNotification(&hcan,0);
 	gBoostController.loop();
+	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_RX_FIFO1_MSG_PENDING);
 }
 
+void my_HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
+void my_HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan);
+void my_HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan);
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	my_HAL_CAN_RxFifo0MsgPendingCallback(hcan);
+	// const auto& map = CANCommProvider::getMap();
+	// auto it = map.find(hcan);
+	// if (it != map.end())
+	// {
+	// 	it->second->onCanReceive();
+	// }
 }
+
+void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
+{
+	my_HAL_CAN_RxFifo0FullCallback(hcan);
+}
+
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	my_HAL_CAN_RxFifo1MsgPendingCallback(hcan);
+}
+
+} // Extern "C"

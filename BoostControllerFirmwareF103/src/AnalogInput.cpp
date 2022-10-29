@@ -60,35 +60,51 @@ volatile uint16_t gAdcOutputTable[NB_ADC_CONV] = {0};
 void AnalogConverter::setup()
 {
 	// Init ADC
-	HAL_ADCEx_Calibration_Start(mHadc);
+//	HAL_ADCEx_Calibration_Start(mHadc);
 
+	mLastConvStart = HAL_GetTick();
 	// Start 1st conversion
-	HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
+	mDEBUG_last_start_DMA_ret = HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
 }
 
 void AnalogConverter::loop()
 {
-	// Wait for conversion done
 	if (not mBufferReady)
 	{
-		return;
+		// check for 'missed' interrupt...
+		auto now = HAL_GetTick();
+		if (now - mLastConvStart > 100)
+		{
+			// more than 100ms... Restart conv
+			mLastConvStart = HAL_GetTick();
+		 	mDEBUG_last_start_DMA_ret = HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
+		}
 	}
-
-	// Apply conversion factors
-	for (unsigned int i=0; i<NB_ADC_CONV; ++i)
+	else
 	{
-		mAdcOutputTable[i] = gAdcOutputTable[i] * aci[i].mConvFactor - aci[i].mConvOffset;
-//		mAdcOutputTable[i] = gAdcOutputTable[i];
-	}
+		// Apply conversion factors
+		for (unsigned int i=0; i<NB_ADC_CONV; ++i)
+		{
+			mAdcOutputTable[i] = gAdcOutputTable[i] * aci[i].mConvFactor + aci[i].mConvOffset;
+	//		mAdcOutputTable[i] = gAdcOutputTable[i];
+		}
 
-	// Start next conversion and wait
-	mBufferReady = false;
-	HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
+		// Start next conversion and wait
+		mBufferReady = false;
+		mDEBUG_DMA_started = true;
+		mConvertiongDone = false;
+		mLastConvStart = HAL_GetTick();
+		mDEBUG_last_start_DMA_ret = HAL_ADC_Start_DMA(mHadc, (uint32_t*)gAdcOutputTable, NB_ADC_CONV);
+	}
 }
 
 // called from interrupt context
 void AnalogConverter::onConvertionComplete()
 {
+	++mIterruptCounter;
+	mDEBUG_DMA_started = false;
+	mConvertiongDone = true;
+
 	if (not mBufferReady)
 	{
 		mBufferReady = true;
@@ -113,4 +129,10 @@ extern "C"
 	{
 		gAnalogConverter.onConvertionComplete();
 	}
+
+	void HAL_ADC_ErrorCallback(ADC_HandleTypeDef* hadc)
+	{
+		gAnalogConverter.onConvertionComplete();
+	}
+
 } // extern "C"

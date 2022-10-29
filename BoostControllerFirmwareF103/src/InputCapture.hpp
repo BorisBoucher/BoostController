@@ -35,7 +35,7 @@ struct InputCaptureMng
 {
 	uint32_t 	mLoopCounter = 0;
 	InputCaptureItem mRPMItem   {156};
-	InputCaptureItem mSpeedItem { 32};
+	InputCaptureItem mSpeedItem { 64};
 	InputCaptureItem mMAFItem   { 16};
 	InputCapture mValues;
 };
