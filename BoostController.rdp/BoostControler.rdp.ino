@@ -627,8 +627,8 @@ void setup()
 // PID state variables
 float gErrorInteg = 0.0f;
 float gErrorDeriv = 0.0f;
-float gLastMAP = 0.0f;
-float gLastError = 0.0f;
+float gLastMAP =    0.0f;
+float gLastError =  0.0f;
 
 void computeGear()
 {
