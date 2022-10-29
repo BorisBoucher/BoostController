@@ -111,7 +111,7 @@ void loop()
 		}
 		else if (not digitalRead(IN_MINUS) and gState.mSpeed > 0.0f)
 		{
-			// Increase speed
+			// Decrease speed
 			gState.mSpeed -= 1.0f;
 		}
 
@@ -169,13 +169,32 @@ void loop()
 	{
 		outSpeed = not outSpeed;
 		digitalWrite(OUT_SPEED, outSpeed);
-		gState.mLastSpeedPulse += gState.mSpeedHalfPeriod;
+
+		// Overflow check
+		if (now - gState.mLastSpeedPulse > 2 * gState.mSpeedHalfPeriod)
+		{
+			// overflow!
+			gState.mLastSpeedPulse = now;
+		}
+		else
+		{
+			gState.mLastSpeedPulse += gState.mSpeedHalfPeriod;
+		}
 	}
 	if (gState.mRpmHalfPeriod > 0 and now - gState.mLastRpmPulse > gState.mRpmHalfPeriod)
 	{
 		outRpm = not outRpm;
 		digitalWrite(OUT_RPM, outRpm);
-		gState.mLastRpmPulse += gState.mRpmHalfPeriod;
+		// Overflow check
+		if (now - gState.mLastRpmPulse > 2 * gState.mRpmHalfPeriod)
+		{
+			// overflow!
+			gState.mLastRpmPulse = now;
+		}
+		else
+		{
+			gState.mLastRpmPulse += gState.mRpmHalfPeriod;
+		}
 	}
 	if (gState.mMafHalfPeriod > 0 and now - gState.mLastMafPulse > gState.mMafHalfPeriod)
 	{
