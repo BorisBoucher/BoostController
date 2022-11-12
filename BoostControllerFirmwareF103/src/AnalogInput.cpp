@@ -86,7 +86,6 @@ void AnalogConverter::loop()
 		for (unsigned int i=0; i<NB_ADC_CONV; ++i)
 		{
 			mAdcOutputTable[i] = gAdcOutputTable[i] * aci[i].mConvFactor + aci[i].mConvOffset;
-	//		mAdcOutputTable[i] = gAdcOutputTable[i];
 		}
 
 		// Start next conversion and wait
@@ -101,7 +100,7 @@ void AnalogConverter::loop()
 // called from interrupt context
 void AnalogConverter::onConvertionComplete()
 {
-	++mIterruptCounter;
+	++mInterruptCounter;
 	mDEBUG_DMA_started = false;
 	mConvertiongDone = true;
 

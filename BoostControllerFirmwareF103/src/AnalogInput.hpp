@@ -121,7 +121,7 @@ class AnalogConverter
 	volatile HAL_StatusTypeDef mDEBUG_last_start_DMA_ret = HAL_OK;
 	volatile bool mDEBUG_DMA_started = false;
 	volatile bool mConvertiongDone = false;
-	volatile uint32_t mIterruptCounter = 0;
+	volatile uint32_t mInterruptCounter = 0;
 
 public:
 

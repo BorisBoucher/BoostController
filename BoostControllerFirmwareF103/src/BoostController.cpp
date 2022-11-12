@@ -944,6 +944,14 @@ void BoostController::evalCycle()
 	mMeasures.OIL_TEMP = gAnalogConverter.getAnalogInput(OIL_TEMP_IN);
 	gParamIndex.setParam(ParamID::OIL_TEMP, mMeasures.OIL_TEMP, false);
 
+	// Coolant temperature.
+	mMeasures.CLT_TEMP = gAnalogConverter.getAnalogInput(WATER_TEMP_IN);
+	gParamIndex.setParam(ParamID::WATER_TEMP, mMeasures.CLT_TEMP, false);
+
+	// Lambda.
+	mMeasures.LAMBDA = gAnalogConverter.getAnalogInput(AFR_IN);
+	gParamIndex.setParam(ParamID::LAMBDA, mMeasures.LAMBDA, false);
+
 	// Throttle analog read. 0..100% => 0..5V
 	mMeasures.THROTTLE = gAnalogConverter.getAnalogInput(THROTTLE_IN);
 	mMeasures.THROTTLE = mThrottleLowpassFilter.input(mMeasures.THROTTLE);

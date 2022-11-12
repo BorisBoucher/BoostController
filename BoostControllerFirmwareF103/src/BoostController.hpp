@@ -41,6 +41,10 @@ struct Measurement
 	float	OIL_PRESS = 0.0f;
 	// Oil temperature
 	float	OIL_TEMP = 0.0f;
+	// Coolant temperature
+	float	CLT_TEMP = 0.0f;
+	// Lambda value
+	float	LAMBDA = 0.0f;
 };
 
 
