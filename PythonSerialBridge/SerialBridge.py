@@ -11,19 +11,24 @@ from curses.textpad import rectangle
 
 convert_table = \
 {
-    0:    ("MAP",  1.0/50.0,      "bar"),
-    1:    ("TPS",  1.0,           "%"),
-    2:    ("WG",   1.0,           "%"),
-    3:    ("GEAR", 1.0,           ""),
-    4:    ("LOAD", 1.0,           "%"),
-    6:    ("TGT",  1.0/50.0,      "bar"),
-    7:    ("OUT",  1.0/50.0,      "bar"),
-    92:   ("OILP", 1.0/20.0,      "bar"),
-    93:   ("FUELP",1.0/40.0,      "bar"),
-    1035: ("TACK", 1.0,           "RPM"),
-    1036: ("SPD",  1.0,           "km/h"),
-    1037: ("TPS'", 1.0/100.0,     "%/s"),
-    1038: ("MAF",  1.0,           "Hz")
+#   ID     Label   Ratio          Unit     Signed?
+    0:    ("MAP",  1.0/50.0,      "bar",   False),
+    1:    ("TPS",  1.0,           "%",     False),
+    2:    ("WG",   1.0,           "%",     False),
+    3:    ("GEAR", 1.0,           "",      False),
+    4:    ("LOAD", 1.0,           "%",     False),
+    5:    ("CPU",  1.0,           "%",     False),
+    6:    ("TGT",  1.0/50.0,      "bar",   False),
+    7:    ("OUT",  1.0/50.0,      "bar",   False),
+    92:   ("OILP", 1.0/20.0,      "bar",   False),
+    93:   ("FUELP",1.0/40.0,      "bar",   False),
+    0x40f:("CLT",  1.0/10.0,      "°C",    True),
+    0x410:("OILT", 1.0/10.0,      "°C",    False),
+    0x05e:("AFR",  1.0/100.0,     "λ",     False),
+    1035: ("TACK", 1.0,           "RPM",   False),
+    1036: ("SPD",  1.0,           "km/h",  False),
+    1037: ("TPS'", 1.0/100.0,     "%/s",   True),
+    1038: ("MAF",  1.0,           "Hz",    False)
 }
 
 def updateDisplay(stdscr, data: dict):
@@ -45,7 +50,7 @@ def updateDisplay(stdscr, data: dict):
         if key in convert_table:
             value = 0
             if len(buf) == 2:
-                value = int.from_bytes([buf[0], buf[1]], 'little', signed=True)
+                value = int.from_bytes([buf[0], buf[1]], 'little', signed=convert_table[key][3])
             else:
                 value = buf[0]
             # for x in reversed(buf):
