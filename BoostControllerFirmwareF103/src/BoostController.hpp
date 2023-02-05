@@ -52,7 +52,7 @@ class BoostController : public ParamIndex::ChangeCallbackInterface
 {
 	// Other constants
 	// loop period in ms
-	static const constexpr uint32_t LOOP_PERIOD = 100;
+	static const constexpr uint32_t LOOP_PERIOD = 25;
 
 	FilterOnePole mMapLowPassFilter =          {micros, LOWPASS,  5.0f};
 	FilterOnePole mBoostHighpassFilter =       {micros, HIGHPASS, 0.1f}; 

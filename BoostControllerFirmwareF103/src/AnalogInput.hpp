@@ -1,19 +1,10 @@
 #pragma once
 
-//#include <avr/io.h> // Standard include for AVR
-// #include <atomic>
 #include <stdint.h>
 #include <stddef.h>
-// #include <cmath>
 #include <functional>
-// #include <FloatDefine.h>
-// #include <RunningStatistics.h>
 #include "std_helper.hpp"
-// #include "config.hpp"
 #include "core/Inc/main.h"
-// #include "BoostController.hpp"
-// #include "InputCapture.hpp"
-
 
 enum AnalogInput
 {

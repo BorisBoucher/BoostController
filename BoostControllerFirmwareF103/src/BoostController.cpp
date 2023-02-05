@@ -5,12 +5,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include <stm32f1xx_ll_dma.h>
 
 #include <FloatDefine.h>
 #include <RunningStatistics.h>
 //#include <parameters/include/ParameterDef.hpp>
 #include <ParameterDef.hpp>
 #include <FlashStore.hpp>
+
 
 #include "std_helper.hpp"
 #include "config.hpp"
@@ -503,6 +505,7 @@ void processConfigStorage(bool store)
 	{
 		processParamStorage(ParamID::TIRE_CIRC, gConfig.tireCircum, store);
 		processParamStorage(ParamID::SPEED_RATIO,  gConfig.speedFactor, store);
+		processParamStorage(ParamID::BC_MAX_TTL_CAL,  gConfig.throttleScale, store);
 	}
 
 	// gear ratio
@@ -789,15 +792,16 @@ void BoostController::manageFuelPrime()
 
 	auto now = HAL_GetTick();
 
-	// NB: output is a low ide switch with a boost transistor that invert the logic of the 
+	// NB: output is a low side switch with a boost transistor that invert the logic of the 
 	// output.
 	if (now / 1000 < gConfig.fuelPumpPrime)
 	{
+		// fuel priming period, force fuel pump
 		digitalWrite(FUEL_PUMP_OUT, false);
 	}
 	else
 	{
-		// prime finished
+		// prime finished, let ECM control the fuel pump 
 		digitalWrite(FUEL_PUMP_OUT, true);
 		mPrimingFuel = false;
 	}
@@ -960,6 +964,7 @@ void BoostController::evalCycle()
 	{
 		// We found a greater value, update max scale
 		gConfig.throttleScale = uint8_t(round(mMeasures.THROTTLE));
+		gParamIndex.setParam(BC_MAX_TTL_CAL, gConfig.throttleScale, true);
 		// Make sure to save it
 		gConfChanged = true;
 	}
@@ -1062,7 +1067,7 @@ void BoostController::evalCycle()
 	float error = mMeasures.TARGET_BOOST - (std::max(0.0f, mMeasures.MAP));
 	float P = error * gConfig.pidParam[0];
 	// Integral windup check
-	if (mMeasures.RPM > 2000 && fabs(error) < 0.4f)
+	if (mMeasures.RPM > 2000 and fabs(error) < 0.4f)
 	{
 		mErrorInteg += error * gConfig.pidParam[1] * (LOOP_PERIOD * 0.001f);
 		mErrorInteg = constrain(mErrorInteg, -0.3f, 0.3f);
@@ -1122,11 +1127,11 @@ class SerialMgr : public CommInterface
 
 	UART_HandleTypeDef*	mHUart;
 
-	// 16 byte buffer (2^4)
-	static const constexpr size_t BUFFER_POWER = 4;
+	// 256 bytes buffer (2^8)
+	static const constexpr size_t BUFFER_POWER = 8;
 	static const constexpr size_t BUFFER_SIZE = 1 << BUFFER_POWER;
 	static const constexpr size_t BUFFER_SIZE_MASK = BUFFER_SIZE-1;
-	// 16 bytes input ring buffer
+	// 256 bytes input ring buffer
 	uint8_t mInputBuffer[BUFFER_SIZE];
 	// Input ring buffer head (AKA read cursor)
 	uint8_t mInputHead = 0;
@@ -1181,7 +1186,7 @@ class SerialMgr : public CommInterface
 
 			header.mCommand = static_cast<Command>((ctrl >> 3) & 0b11);
 			header.mSize = 1 + ((ctrl >> 5) & 0b111);
-			header.mId = ((uint16_t(ctrl) & 0x111) << 8) + idLow;
+			header.mId = ((uint16_t(ctrl) & 0b111) << 8) + idLow;
 		}
 
 		return header;
@@ -1203,14 +1208,25 @@ class SerialMgr : public CommInterface
 
 		// Once purged, we restart with a header
 		mExpectInput = MINIMUM_MSG_SIZE;
+
+		// And reset state
+		mInputState = WAIT_HEADER;
 	}
 
-	bool verifyChecksum()
+	void consumeInput(size_t nbByte)
 	{
-		auto idx = mInputHead;
+		while (nbByte > 0 and mInputTail != mInputHead)
+		{
+			mInputHead = (mInputHead + 1) & BUFFER_SIZE_MASK;
+		}
+	}
+
+	bool verifyChecksum(const uint8_t startIdx, const uint8_t endIdx) const
+	{
+		uint8_t idx = startIdx;
 		uint8_t sum = 0;
 
-		while (idx != mInputTail)
+		while (idx != endIdx)
 		{
 			sum += mInputBuffer[idx];
 			idx = (idx + 1) & BUFFER_SIZE_MASK;
@@ -1289,18 +1305,43 @@ public:
 	SerialMgr(UART_HandleTypeDef* hUart)
 	:	mHUart(hUart)
 	{
-	
+	}
+
+	void setup()
+	{
+		// Start DMA RX
+		HAL_StatusTypeDef ret = HAL_UART_Receive_DMA(mHUart, mInputBuffer, BUFFER_SIZE);
+	}
+
+	void setCommCallback(CommProviderCallback* commCallback)
+	{
+		mCommCallback = commCallback;
 	}
 
 	void loop()
 	{
-		if (HAL_UART_Receive(mHUart, mInputBuffer + mInputTail, 1, 0) == HAL_OK)
+		// polling DMA state
+		
+		mInputTail = BUFFER_SIZE - LL_DMA_GetDataLength(mHUart->hdmarx->DmaBaseAddress, LL_DMA_CHANNEL_5);
+//		mInputTail = BUFFER_SIZE - LL_DMA_GetDataLength(mHUart->hdmarx->DmaBaseAddress, mHUart->hdmarx->ChannelIndex);
+
+
+		// size_t maxReadPerLoop = 100;
+		// while (		maxReadPerLoop > 0 
+		// 		and HAL_UART_Receive(mHUart, mInputBuffer + mInputTail, 1, 0) == HAL_OK)
+		// {
+		// 	--maxReadPerLoop;
+		// 	// advance write cursor
+		// 	mInputTail = (mInputTail + 1) & BUFFER_SIZE_MASK;
+
+		bool again;
+		do
 		{
-			// advance write cursor
-			mInputTail = (mInputTail + 1) & BUFFER_SIZE_MASK;
+			again = false;
+			size_t available = (mInputTail - mInputHead) & BUFFER_SIZE_MASK;
 
 			// Do we have the awaited data ?
-			if (((mInputTail - mInputHead) & BUFFER_SIZE_MASK) == mExpectInput)
+			if (available >= MINIMUM_MSG_SIZE)
 			{
 				Header header = readHeader();
 				// process input
@@ -1308,10 +1349,15 @@ public:
 				{
 					if (header.mCommand == DATA_RQ)
 					{
-						if (verifyChecksum())
+						if (verifyChecksum(mInputHead, (mInputHead + MINIMUM_MSG_SIZE) & BUFFER_SIZE_MASK))
 						{
 							// we can process the command
 							mCommCallback->requestFromComm(this, header.mId, header.mSize);
+							consumeInput(MINIMUM_MSG_SIZE);
+						}
+						else
+						{
+							purgeInputBuffer();
 						}
 					}
 					else if (header.mCommand == DATA_TX)
@@ -1324,20 +1370,44 @@ public:
 					{
 						purgeInputBuffer();
 					}
+
+					again = true;
 				}
-				else if (mInputState == WAIT_DATA)
+				else if (mInputState == WAIT_DATA and available >= mExpectInput)
 				{
 					if (header.mCommand == DATA_TX)
 					{
-						if (verifyChecksum())
+						if (verifyChecksum(mInputHead, (mInputHead + MINIMUM_MSG_SIZE + header.mSize) & BUFFER_SIZE_MASK))
 						{
+							// copy the data from the buffer!
+							uint8_t data[8];
+							for (size_t i=0; i<header.mSize; ++i)
+							{
+								data[i] = mInputBuffer[(mInputHead + 3 + i) % BUFFER_SIZE_MASK];
+							}
 							// we can process the command
-							mCommCallback->setFromComm(this, header.mId, mInputBuffer + 3, header.mSize);
+							mCommCallback->setFromComm(this, header.mId, data, header.mSize);
+							consumeInput(MINIMUM_MSG_SIZE + header.mSize);
+							mInputState = WAIT_HEADER;
+						}
+						else
+						{
+							purgeInputBuffer();
 						}
 					}
+					else
+					{
+						purgeInputBuffer();
+					}
+
+					again = true;
 				}
+				// else
+				// {
+				// 	purgeInputBuffer();
+				// }
 			}
-		}
+		} while (again);
 	}
 };
 
@@ -1350,7 +1420,6 @@ SerialMgr gSerialMgr(&huart1);
 /// - Local => CAN and serial
 class MultiCommProvider : public CommInterface, public CommProviderCallback
 {
-
 	CommProviderCallback* mCommCallback = nullptr;
 
 	std::vector<CommInterface*> mCommInterfaces;
@@ -1440,21 +1509,21 @@ struct ParamBroadcast
 const constexpr ParamBroadcast gParamBroadcastTable[] =
 {
 	// ID					period(ms)
-	{ParamID::MAP,			    1},
-	{ParamID::THROTTLE,		   10},
-	{ParamID::BC_SOL_DC,	   10},
+	{ParamID::MAP,			   10},
+	{ParamID::THROTTLE,		   50},
+	{ParamID::BC_SOL_DC,	   50},
 	{ParamID::GEAR,			  100},
-	{ParamID::LOAD,			   10},
-	{ParamID::BC_CPU_LOAD,	   10},
-	{ParamID::BC_TGT_BOOST,	   10},
-	{ParamID::BC_TGT_OUTPUT,   10},
-	{ParamID::OIL_PRES,		   10},
-	{ParamID::FUEL_PRES,	   10},
+	{ParamID::LOAD,			   50},
+	{ParamID::BC_CPU_LOAD,	   50},
+	{ParamID::BC_TGT_BOOST,	   50},
+	{ParamID::BC_TGT_OUTPUT,   50},
+	{ParamID::OIL_PRES,		   50},
+	{ParamID::FUEL_PRES,	   50},
 	{ParamID::LAMBDA,		  100},
-	{ParamID::RPM,			   10},
-	{ParamID::SPEED,		   10},
+	{ParamID::RPM,			   20},
+	{ParamID::SPEED,		   20},
 	{ParamID::TTL_POS_DER,	  100},
-	{ParamID::AIR_FLOW,		   10},
+	{ParamID::AIR_FLOW,		   20},
 	{ParamID::WATER_TEMP,	 1000},
 	{ParamID::OIL_TEMP,		 1000},
 };
@@ -1508,18 +1577,6 @@ void BoostController::loop()
 	// 100 eval cycles per second
 	uint32_t now = micros();
 	
-	if (now - mLastEvalCycle > LOOP_PERIOD * 1000)
-	{
-		evalCycle();
-		mLastEvalCycle = now;
-		
-		uint32_t after = micros();
-		
-		// compute CPU load
-		mMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
-		gParamIndex.setParam(ParamID::BC_CPU_LOAD, mMeasures.CHIP_LOAD, false);
-	}
-
 	// manage serial port
 	gSerialMgr.loop();
 
@@ -1527,7 +1584,7 @@ void BoostController::loop()
 	gCanCommProvider.loop();
 
 	// Manage parameter broadcast
-//	gBroadcaster.loop();
+	gBroadcaster.loop();
 	
 	if (now - mLastSaveCheck > 1000000)
 	{
@@ -1539,6 +1596,36 @@ void BoostController::loop()
 		}
 		mLastSaveCheck = now;
 	}
+
+	if (now - mLastEvalCycle > LOOP_PERIOD * 1000)
+	{
+		evalCycle();
+		mLastEvalCycle = now;
+		
+		uint32_t after = micros();
+		
+		// compute CPU load
+		// Maximum load is kept for 500ms
+		static uint32_t lastLoadReset = 0;
+		static float maxLoad = 0.0f;
+		static float prevMaxLoad = 0.0f;
+		if (now - lastLoadReset > 500000)
+		{
+			prevMaxLoad = maxLoad;
+			maxLoad = 0.0f;
+			lastLoadReset = now;
+		}
+
+		mMeasures.CHIP_LOAD = (after - now) * 100 / (LOOP_PERIOD * 1000.0f);
+		if (mMeasures.CHIP_LOAD > maxLoad)
+		{
+			maxLoad = mMeasures.CHIP_LOAD;
+			gParamIndex.setParam(
+				ParamID::BC_CPU_LOAD,
+				std::max(prevMaxLoad, maxLoad),
+				false);
+		}
+	}
 }
 
 extern "C"
@@ -1548,6 +1635,7 @@ void setup()
 {
 	gBoostController.setup();
 
+	gSerialMgr.setCommCallback(&gMultiComm);
 	gMultiComm.setCommCallback(&gParamIndex);
 	gMultiComm.addCommInterface(&gCanCommProvider);
 	gMultiComm.addCommInterface(&gSerialMgr);
@@ -1566,11 +1654,12 @@ void setup()
 	filter.FilterMaskIdHigh = 0;
 	filter.FilterMaskIdLow = 0;
 	HAL_CAN_ConfigFilter(&hcan, &filter);
+
+	gSerialMgr.setup();
 }
 
 void loop()
 {
-	
 	HAL_CAN_ActivateNotification(&hcan,0);
 	gBoostController.loop();
 	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING|CAN_IT_RX_FIFO1_MSG_PENDING);
